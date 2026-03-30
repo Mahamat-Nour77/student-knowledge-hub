@@ -19,29 +19,34 @@ from .models import (
 )
 from .forms import CommentForm, DocumentForm, CourseForm
 
-from groq import Groq
-
+import google.generativeai as genai
 import pdfplumber
 import json
 import os
 
-GROQ_API_KEY = "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"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+# ══════════════════════════════════════════════════════════════════
+#  CONFIG GEMINI
+# ══════════════════════════════════════════════════════════════════
 
-groq_client = Groq(api_key=GROQ_API_KEY)
+GEMINI_API_KEY = "AIzaSyC0bQaKi3SQxDbJpqswgvPXSP4q08PpesA"
 
 CATEGORY_CHOICES = [
-    ("cours", "Cours"),
-    ("td", "TD / TP"),
-    ("resume", "Résumé"),
-    ("examen", "Examen / Annale"),
-    ("autre", "Autre"),
+    ("cours",   "Cours"),
+    ("td",      "TD / TP"),
+    ("resume",  "Résumé"),
+    ("examen",  "Examen / Annale"),
+    ("autre",   "Autre"),
 ]
 
 
 # ══════════════════════════════════════════════════════════════════
 #  HELPERS
 # ══════════════════════════════════════════════════════════════════
+
+def _get_model():
+    genai.configure(api_key=GEMINI_API_KEY)
+    return genai.GenerativeModel("gemini-1.5-flash")
+
 
 def _extract_pdf_text(file_path: str, max_chars: int = 8000) -> str:
     text = ""
@@ -57,6 +62,8 @@ def _extract_pdf_text(file_path: str, max_chars: int = 8000) -> str:
 
 
 def _generate_quiz_with_groq(text: str, num_questions: int = 10) -> list:
+    """Génère un quiz QCM via Gemini."""
+    model = _get_model()
     prompt = f"""Tu es un professeur expert. À partir du texte suivant, génère exactement {num_questions} questions QCM en français.
 
 TEXTE :
@@ -79,13 +86,8 @@ RÈGLES STRICTES :
     "explanation": "..."
   }}
 ]"""
-
-    response = groq_client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-    )
-    raw = response.choices[0].message.content.strip()
+    response = model.generate_content(prompt)
+    raw = response.text.strip()
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
@@ -94,6 +96,8 @@ RÈGLES STRICTES :
 
 
 def _ai_answer_question(question) -> str:
+    """Génère une réponse IA pour une question du forum via Gemini."""
+    model = _get_model()
     prompt = f"""Tu es un assistant pédagogique pour étudiants. Réponds à cette question de manière claire et structurée en français.
 
 Matière : {question.get_subject_display()}
@@ -101,13 +105,38 @@ Question : {question.title}
 Détails : {question.content}
 
 Donne une réponse complète avec des exemples si possible. Sois pédagogique."""
+    response = model.generate_content(prompt)
+    return response.text.strip()
 
-    response = groq_client.chat.completions.create(
-        model=GROQ_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-    )
-    return response.choices[0].message.content.strip()
+
+def _generate_flashcards(text: str) -> list:
+    """Génère des flashcards via Gemini."""
+    model = _get_model()
+    prompt = f"""À partir du texte suivant, génère 10 flashcards pédagogiques en français.
+Réponds UNIQUEMENT avec un JSON valide, sans texte avant ou après :
+[{{"question": "...", "answer": "..."}}]
+
+TEXTE :
+{text}"""
+    response = model.generate_content(prompt)
+    raw = response.text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("```")[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+    return json.loads(raw.strip())
+
+
+def _generate_resume(text: str) -> str:
+    """Génère un résumé via Gemini."""
+    model = _get_model()
+    prompt = f"""Fais un résumé structuré et clair de ce texte en français.
+Utilise des titres, sous-titres et points clés. Sois concis mais complet.
+
+TEXTE :
+{text}"""
+    response = model.generate_content(prompt)
+    return response.text.strip()
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -241,7 +270,7 @@ def upload_document(request, course_id):
                     messages.error(request, f"Document uploadé ✅ mais erreur quiz : {e}")
                     return redirect("course_detail", course_id=course.id)
             else:
-                messages.success(request, "✅ Document uploadé ! (Quiz IA disponible uniquement pour les PDFs)")
+                messages.success(request, "✅ Document uploadé !")
                 return redirect("course_detail", course_id=course.id)
     else:
         form = DocumentForm()
@@ -258,29 +287,10 @@ def delete_comment(request, comment_id):
 
 @login_required
 def my_documents(request):
-    if request.method == "POST":
-        title       = request.POST.get("title", "").strip()
-        file        = request.FILES.get("file")
-        description = request.POST.get("description", "").strip()
-        category    = request.POST.get("category", "autre")
-
-        if not title or not file:
-            messages.error(request, "Titre et fichier sont obligatoires.")
-        else:
-            Document.objects.create(
-                title=title,
-                file=file,
-                description=description,
-                uploaded_by=request.user,
-            )
-            messages.success(request, f"✅ « {title} » ajouté à ta bibliothèque !")
-        return redirect("my_documents")
-
     category_filter = request.GET.get("category")
     qs = Document.objects.filter(uploaded_by=request.user)
     if category_filter:
         qs = qs.filter(description__icontains=category_filter)
-
     return render(request, "courses/my_documents.html", {
         "documents": qs,
         "total": qs.count(),
@@ -728,7 +738,7 @@ def tip_create(request):
 
 
 # ══════════════════════════════════════════════════════════════════
-#  BIBLIOTHÈQUE PERSONNELLE — FONCTIONNALITÉS IA
+#  BIBLIOTHÈQUE PERSONNELLE — FONCTIONNALITÉS IA (Gemini)
 # ══════════════════════════════════════════════════════════════════
 
 @login_required
@@ -776,23 +786,7 @@ def personal_flashcards(request, document_id):
             messages.error(request, "Le PDF ne contient pas assez de texte.")
             return redirect("my_documents")
         try:
-            prompt = f"""À partir du texte suivant, génère 10 flashcards en français.
-Réponds UNIQUEMENT avec un JSON valide, sans texte avant ou après :
-[{{"question": "...", "answer": "..."}}]
-
-TEXTE :
-{text}"""
-            response = groq_client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-            )
-            raw = response.choices[0].message.content.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            flashcards = json.loads(raw.strip())
+            flashcards = _generate_flashcards(text)
         except Exception as e:
             error = str(e)
     return render(request, "courses/personal_flashcards.html", {
@@ -811,17 +805,7 @@ def personal_resume(request, document_id):
             messages.error(request, "Le PDF ne contient pas assez de texte.")
             return redirect("my_documents")
         try:
-            prompt = f"""Fais un résumé structuré et clair de ce texte en français.
-Utilise des titres, sous-titres et points clés. Sois concis mais complet.
-
-TEXTE :
-{text}"""
-            response = groq_client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.7,
-            )
-            resume = response.choices[0].message.content.strip()
+            resume = _generate_resume(text)
         except Exception as e:
             error = str(e)
     return render(request, "courses/personal_resume.html", {
@@ -833,27 +817,24 @@ TEXTE :
 def personal_chat(request, document_id):
     document = get_object_or_404(Document, id=document_id, uploaded_by=request.user)
     answer = None
-    question = None
+    question_text = None
     error = None
     if request.method == "POST":
-        question = request.POST.get("question", "").strip()
-        if question:
+        question_text = request.POST.get("question", "").strip()
+        if question_text:
             text = _extract_pdf_text(document.file.path)
             try:
+                model = _get_model()
                 prompt = f"""Tu es un assistant pédagogique. Réponds à la question en te basant sur le document.
 
 DOCUMENT :
 {text}
 
-QUESTION : {question}"""
-                response = groq_client.chat.completions.create(
-                    model=GROQ_MODEL,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.7,
-                )
-                answer = response.choices[0].message.content.strip()
+QUESTION : {question_text}"""
+                response = model.generate_content(prompt)
+                answer = response.text.strip()
             except Exception as e:
                 error = str(e)
     return render(request, "courses/personal_chat.html", {
-        "document": document, "answer": answer, "question": question, "error": error
+        "document": document, "answer": answer, "question": question_text, "error": error
     })

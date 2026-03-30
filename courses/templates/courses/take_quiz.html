@@ -81,7 +81,6 @@
         <div class="q-number">Question {{ forloop.counter }} / {{ questions|length }}</div>
         <div class="q-text">{{ q.question }}</div>
         <div class="choices">
-          {% for letter, text in q.choice_a|add:"|||"|add:q.choice_b|add:"|||"|add:q.choice_c|add:"|||"|add:q.choice_d %}{% endfor %}
 
           <label class="choice-label">
             <input type="radio" name="q_{{ q.id }}" value="A" onchange="updateProgress()">
