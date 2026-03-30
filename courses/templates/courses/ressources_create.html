@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:700px;margin:0 auto;padding:24px 16px">
+
+  <h2 style="font-size:1.5rem;font-weight:700;margin-bottom:24px">📤 Partager une ressource</h2>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px">
+    <form method="post" id="resourceForm">
+      {% csrf_token %}
+
+      <!-- Type -->
+      <div style="margin-bottom:20px">
+        <label style="display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:8px">Type de ressource *</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          {% for val,label in type_choices %}
+          <label style="cursor:pointer">
+            <input type="radio" name="type" value="{{ val }}" {% if forloop.first %}checked{% endif %} onchange="toggleFlashcards()"
+                   style="display:none" class="type-radio">
+            <span class="type-btn" data-val="{{ val }}"
+                  style="display:block;padding:10px 18px;border-radius:10px;border:1px solid var(--border);font-size:.88rem;font-weight:600;color:var(--muted);transition:all .15s;background:rgba(255,255,255,0.03)">
+              {% if val == "resume" %}📄{% elif val == "flashcard" %}🃏{% else %}💡{% endif %} {{ label }}
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <label style="display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:6px">Matière</label>
+          <select name="subject" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:.85rem;box-sizing:border-box">
+            {% for val,label in subject_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div style="flex:1;min-width:140px">
+          <label style="display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:6px">Cours lié (optionnel)</label>
+          <select name="course_id" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:.85rem;box-sizing:border-box">
+            <option value="">-- Aucun --</option>
+            {% for c in courses %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:6px">Titre *</label>
+        <input name="title" required maxlength="300" placeholder="Ex: Résumé complet Thermodynamique S3"
+               style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:.9rem;box-sizing:border-box">
+      </div>
+
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:.85rem;font-weight:600;color:var(--muted);margin-bottom:6px">Contenu / Description *</label>
+        <textarea name="content" required rows="6" placeholder="Le contenu de ton résumé, ou une description de la ressource..."
+                  style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:.9rem;resize:vertical;box-sizing:border-box"></textarea>
+      </div>
+
+      <!-- Section flashcards (affichée seulement si type=flashcard) -->
+      <div id="flashcard-section" style="display:none;margin-bottom:18px;background:rgba(99,179,237,0.05);border:1px solid rgba(99,179,237,0.2);border-radius:12px;padding:18px">
+        <label style="display:block;font-size:.85rem;font-weight:600;color:#63b3ed;margin-bottom:8px">🃏 Cartes (format : Q: question → R: réponse, séparées par ---)</label>
+        <textarea name="flashcards_data" rows="8" placeholder="Q: Qu'est-ce que la dérivée ?
+R: La dérivée mesure le taux de variation instantané d'une fonction.
+---
+Q: Formule de la dérivée de x² ?
+R: 2x"
+                  style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(99,179,237,0.2);border-radius:8px;padding:12px;color:var(--text);font-size:.85rem;resize:vertical;box-sizing:border-box;font-family:monospace"></textarea>
+      </div>
+
+      <button type="submit" style="width:100%;background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:600;cursor:pointer">
+        Partager avec la communauté 🚀
+      </button>
+    </form>
+  </div>
+
+</div>
+
+<script>
+function toggleFlashcards() {
+  const selected = document.querySelector('input[name="type"]:checked')?.value;
+  document.getElementById('flashcard-section').style.display = selected === 'flashcard' ? 'block' : 'none';
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    const active = btn.dataset.val === selected;
+    btn.style.background = active ? 'rgba(99,179,237,0.15)' : 'rgba(255,255,255,0.03)';
+    btn.style.borderColor = active ? 'rgba(99,179,237,0.5)' : 'var(--border)';
+    btn.style.color = active ? '#63b3ed' : 'var(--muted)';
+  });
+}
+document.querySelectorAll('.type-radio').forEach(r => r.addEventListener('change', toggleFlashcards));
+toggleFlashcards();
+</script>
+{% endblock %}

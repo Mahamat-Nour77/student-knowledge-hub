@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  body { background:#0b0f1a !important; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  .page-wrap { max-width:780px; margin:0 auto; padding:32px 20px 80px; }
+
+  /* Hero */
+  .add-hero {
+    background:linear-gradient(135deg,rgba(124,58,237,0.18),rgba(59,130,246,0.1));
+    border:1px solid rgba(124,58,237,0.2); border-radius:20px;
+    padding:32px 36px; margin-bottom:32px;
+    display:flex; align-items:center; gap:20px;
+    animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+  }
+  .add-hero-icon { font-size:3rem; flex-shrink:0; }
+  .add-hero h1 { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; color:#e8eaf0; margin-bottom:4px; }
+  .add-hero p  { font-size:.85rem; color:#6b7280; margin:0; }
+
+  /* Card */
+  .form-card {
+    background:rgba(11,15,26,0.8); border:1px solid rgba(255,255,255,0.08);
+    border-radius:24px; padding:40px;
+    backdrop-filter:blur(20px);
+    box-shadow:0 32px 80px rgba(0,0,0,0.5);
+    animation:fadeUp .6s cubic-bezier(.16,1,.3,1) .08s both;
+  }
+
+  /* Section titre */
+  .form-section { margin-bottom:32px; }
+  .form-section-title {
+    font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:#7c3aed; margin-bottom:16px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .form-section-title::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.06); }
+
+  /* Champs */
+  .field-row { display:grid; gap:16px; margin-bottom:16px; }
+  .field-row.cols2 { grid-template-columns:1fr 1fr; }
+  .field-row.cols3 { grid-template-columns:1fr 1fr 1fr; }
+
+  .field { display:flex; flex-direction:column; gap:6px; }
+  .field label { font-size:.75rem; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:#6b7280; }
+  .field label span.req { color:#7c3aed; margin-left:2px; }
+
+  .field input, .field select, .field textarea {
+    background:rgba(255,255,255,0.05) !important;
+    border:1px solid rgba(255,255,255,0.09) !important;
+    border-radius:12px !important;
+    padding:13px 16px !important;
+    font-size:.9rem !important; color:#e8eaf0 !important;
+    outline:none !important; box-shadow:none !important;
+    transition:border-color .2s, box-shadow .2s, background .2s !important;
+    font-family:'DM Sans','Segoe UI',sans-serif;
+    width:100%;
+  }
+  .field input::placeholder, .field textarea::placeholder { color:#2d3748 !important; }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    border-color:rgba(99,179,237,0.55) !important;
+    box-shadow:0 0 0 3px rgba(99,179,237,0.1) !important;
+    background:rgba(255,255,255,0.07) !important;
+  }
+  .field select { appearance:none; cursor:pointer; }
+  .field textarea { resize:vertical; min-height:90px; }
+
+  /* Tags sélectionnables */
+  .tag-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .tag-chip {
+    padding:6px 14px; border-radius:99px;
+    border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04);
+    font-size:.78rem; font-weight:500; color:#6b7280;
+    cursor:pointer; transition:all .15s; user-select:none;
+  }
+  .tag-chip:hover { border-color:rgba(124,58,237,0.4); color:#a78bfa; background:rgba(124,58,237,0.08); }
+  .tag-chip.selected { border-color:rgba(124,58,237,0.6); color:#a78bfa; background:rgba(124,58,237,0.15); }
+
+  /* Difficulté */
+  .diff-btns { display:flex; gap:10px; }
+  .diff-btn {
+    flex:1; padding:12px; border-radius:12px;
+    border:1px solid rgba(255,255,255,0.09);
+    background:rgba(255,255,255,0.04);
+    font-size:.82rem; font-weight:600; color:#6b7280;
+    cursor:pointer; transition:all .15s; text-align:center;
+  }
+  .diff-btn:hover { border-color:rgba(255,255,255,0.2); color:#e8eaf0; }
+  .diff-btn.easy.selected   { border-color:rgba(52,211,153,0.5); color:#34d399; background:rgba(52,211,153,0.1); }
+  .diff-btn.medium.selected { border-color:rgba(251,191,36,0.5);  color:#fbbf24; background:rgba(251,191,36,0.1); }
+  .diff-btn.hard.selected   { border-color:rgba(248,113,113,0.5); color:#f87171; background:rgba(248,113,113,0.1); }
+
+  /* Upload image */
+  .img-upload {
+    border:2px dashed rgba(255,255,255,0.1); border-radius:14px;
+    padding:28px; text-align:center; cursor:pointer;
+    transition:border-color .2s, background .2s;
+    position:relative;
+  }
+  .img-upload:hover { border-color:rgba(99,179,237,0.4); background:rgba(99,179,237,0.04); }
+  .img-upload input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .img-upload-icon { font-size:2rem; margin-bottom:8px; }
+  .img-upload-text { font-size:.82rem; color:#6b7280; }
+  .img-upload-text strong { color:#63b3ed; }
+  .img-preview { display:none; width:100%; height:160px; object-fit:cover; border-radius:10px; margin-top:10px; }
+
+  /* Submit */
+  .btn-submit {
+    width:100%; padding:15px; margin-top:8px;
+    background:linear-gradient(135deg,#7c3aed,#3b82f6);
+    border:none; border-radius:12px; color:#fff;
+    font-family:'Syne',sans-serif; font-size:1rem; font-weight:700;
+    letter-spacing:.04em; cursor:pointer;
+    position:relative; overflow:hidden;
+    transition:transform .15s, box-shadow .2s;
+  }
+  .btn-submit::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,0.12),transparent); opacity:0; transition:opacity .2s; }
+  .btn-submit:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(124,58,237,0.45); }
+  .btn-submit:hover::before { opacity:1; }
+
+  /* Hint */
+  .field-hint { font-size:.72rem; color:#4b5563; margin-top:3px; }
+
+  @media(max-width:600px) {
+    .field-row.cols2, .field-row.cols3 { grid-template-columns:1fr; }
+    .form-card { padding:24px 20px; }
+    .add-hero { flex-direction:column; gap:12px; padding:24px; }
+  }
+</style>
+
+<div class="page-wrap">
+
+  <!-- Hero -->
+  <div class="add-hero">
+    <div class="add-hero-icon">📚</div>
+    <div>
+      <h1>Ajouter un cours</h1>
+      <p>Partage tes cours avec la communauté étudiante — plus de détails = plus d'utilité pour tes camarades.</p>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <form method="post" enctype="multipart/form-data" id="courseForm">
+      {% csrf_token %}
+
+      <!-- Infos principales -->
+      <div class="form-section">
+        <div class="form-section-title">📋 Informations principales</div>
+
+        <div class="field-row">
+          <div class="field">
+            <label>Nom du cours <span class="req">*</span></label>
+            <input type="text" name="name" required placeholder="ex: Mathématiques — Analyse L2" maxlength="200">
+          </div>
+        </div>
+
+        <div class="field-row cols2">
+          <div class="field">
+            <label>Professeur / Enseignant</label>
+            <input type="text" name="professor" placeholder="ex: Pr. Dupont" maxlength="200">
+          </div>
+          <div class="field">
+            <label>Filière <span class="req">*</span></label>
+            <select name="filiere">
+              <option value="">-- Choisir --</option>
+              <optgroup label="🔬 Sciences">
+                <option value="Mathématiques">Mathématiques</option>
+                <option value="Physique">Physique</option>
+                <option value="Chimie">Chimie</option>
+                <option value="Biologie">Biologie</option>
+                <option value="Sciences de la Vie">Sciences de la Vie (SVT)</option>
+              </optgroup>
+              <optgroup label="💻 Informatique & Ingénierie">
+                <option value="Informatique">Informatique</option>
+                <option value="Génie Électrique">Génie Électrique</option>
+                <option value="Génie Mécanique">Génie Mécanique</option>
+                <option value="Génie Civil">Génie Civil</option>
+                <option value="Génie Chimique">Génie Chimique</option>
+              </optgroup>
+              <optgroup label="🏥 Santé">
+                <option value="Médecine">Médecine (PASS/LAS)</option>
+                <option value="Pharmacie">Pharmacie</option>
+                <option value="Infirmier">Infirmier (IFSI)</option>
+              </optgroup>
+              <optgroup label="📐 Prépas">
+                <option value="Prépa MPSI">Prépa MPSI</option>
+                <option value="Prépa PCSI">Prépa PCSI</option>
+                <option value="Prépa BCPST">Prépa BCPST</option>
+                <option value="Prépa MP">Prépa MP</option>
+                <option value="Prépa PC">Prépa PC</option>
+              </optgroup>
+              <optgroup label="📚 Autres">
+                <option value="Droit">Droit</option>
+                <option value="Économie">Économie / Gestion</option>
+                <option value="Lettres">Lettres & Sciences Humaines</option>
+                <option value="Autre">Autre</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row cols3">
+          <div class="field">
+            <label>Niveau</label>
+            <select name="semester">
+              <option value="">-- Niveau --</option>
+              <optgroup label="Licence">
+                <option value="L1">L1 — 1ère année</option>
+                <option value="L2">L2 — 2ème année</option>
+                <option value="L3">L3 — 3ème année</option>
+              </optgroup>
+              <optgroup label="Master">
+                <option value="M1">M1 — 4ème année</option>
+                <option value="M2">M2 — 5ème année</option>
+              </optgroup>
+              <optgroup label="BTS / BUT">
+                <option value="BTS1">BTS 1ère année</option>
+                <option value="BTS2">BTS 2ème année</option>
+                <option value="BUT1">BUT 1ère année</option>
+                <option value="BUT2">BUT 2ème année</option>
+                <option value="BUT3">BUT 3ème année</option>
+              </optgroup>
+              <optgroup label="Prépa">
+                <option value="Prépa 1">Prépa 1ère année</option>
+                <option value="Prépa 2">Prépa 2ème année</option>
+              </optgroup>
+              <optgroup label="Médecine">
+                <option value="PASS">PASS</option>
+                <option value="LAS">LAS</option>
+                <option value="DFGSM2">DFGSM2 (2ème)</option>
+                <option value="DFGSM3">DFGSM3 (3ème)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field">
+            <label>Semestre</label>
+            <select name="semestre_num">
+              <option value="">-- Semestre --</option>
+              <option value="S1">Semestre 1</option>
+              <option value="S2">Semestre 2</option>
+              <option value="Annuel">Annuel</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Crédits ECTS</label>
+            <input type="number" name="ects" min="1" max="30" placeholder="ex: 6">
+            <span class="field-hint">Optionnel</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Difficulté -->
+      <div class="form-section">
+        <div class="form-section-title">⚡ Niveau de difficulté</div>
+        <div class="diff-btns" id="diffBtns">
+          <div class="diff-btn easy"   onclick="selectDiff('easy',   this)">🟢 Accessible</div>
+          <div class="diff-btn medium" onclick="selectDiff('medium', this)">🟡 Intermédiaire</div>
+          <div class="diff-btn hard"   onclick="selectDiff('hard',   this)">🔴 Difficile</div>
+        </div>
+        <input type="hidden" name="difficulty" id="diffInput" value="medium">
+      </div>
+
+      <!-- Tags thématiques -->
+      <div class="form-section">
+        <div class="form-section-title">🏷️ Thèmes abordés</div>
+        <div class="tag-grid" id="tagGrid">
+          <div class="tag-chip" onclick="toggleTag(this, 'Algèbre')">Algèbre</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Analyse')">Analyse</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Probabilités')">Probabilités</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Statistiques')">Statistiques</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Géométrie')">Géométrie</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Mécanique')">Mécanique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Thermodynamique')">Thermodynamique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Électromagnétisme')">Électromagnétisme</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Optique')">Optique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Chimie Organique')">Chimie Organique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Chimie Analytique')">Chimie Analytique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Biochimie')">Biochimie</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Génétique')">Génétique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Algorithmique')">Algorithmique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Programmation')">Programmation</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Bases de données')">Bases de données</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Réseaux')">Réseaux</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Intelligence Artificielle')">Intelligence Artificielle</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Électronique')">Électronique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Automatique')">Automatique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Résistance des matériaux')">Résistance des matériaux</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Hydraulique')">Hydraulique</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Anatomie')">Anatomie</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Physiologie')">Physiologie</div>
+          <div class="tag-chip" onclick="toggleTag(this, 'Pharmacologie')">Pharmacologie</div>
+        </div>
+        <!-- Champ thème personnalisé -->
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <div style="position:relative;flex:1">
+            <input type="text" id="customTagInput" placeholder="Ajouter un thème personnalisé... (ex: Électrochimie)"
+              style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:11px 16px;font-size:.88rem;color:#e8eaf0;outline:none;font-family:'DM Sans','Segoe UI',sans-serif;"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTag()}">
+          </div>
+          <button type="button" onclick="addCustomTag()"
+            style="padding:11px 20px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:12px;color:#a78bfa;font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s"
+            onmouseover="this.style.background='rgba(124,58,237,0.25)'" onmouseout="this.style.background='rgba(124,58,237,0.15)'">
+            + Ajouter
+          </button>
+        </div>
+        <input type="hidden" name="tags" id="tagsInput">
+        <div class="field-hint" style="margin-top:8px">Clique sur un thème pour le sélectionner, ou tape le tien ci-dessus</div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-section">
+        <div class="form-section-title">📝 Description</div>
+        <div class="field">
+          <label>Description du cours</label>
+          <textarea name="description" rows="4" placeholder="Décris les objectifs du cours, les chapitres principaux, les prérequis..."></textarea>
+          <span class="field-hint">Optionnel — aide les étudiants à savoir si ce cours leur correspond</span>
+        </div>
+      </div>
+
+      <!-- Image + PDF -->
+      <div class="form-section">
+        <div class="form-section-title">📎 Fichiers du cours</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+          <!-- Image -->
+          <div>
+            <div class="field-label" style="display:block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">🖼️ Image de couverture</div>
+            <div class="img-upload" onclick="document.getElementById('imgInput').click()" style="height:150px">
+              <input type="file" name="image" id="imgInput" accept="image/*" onchange="previewImg(this)">
+              <div class="img-upload-icon">📷</div>
+              <div class="img-upload-text">Clique ou glisse<br><strong>JPG, PNG, WebP</strong></div>
+              <img class="img-preview" id="imgPreview" src="" alt="Aperçu">
+            </div>
+          </div>
+
+          <!-- PDF -->
+          <div>
+            <div class="field-label" style="display:block;font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin-bottom:8px">📄 Document PDF (optionnel)</div>
+            <div class="img-upload" id="pdfUploadZone" onclick="document.getElementById('pdfInput').click()" style="height:150px;border-color:rgba(0,212,255,0.2)">
+              <input type="file" name="pdf_file" id="pdfInput" accept=".pdf" onchange="previewPdf(this)">
+              <div class="img-upload-icon" id="pdfIcon">📄</div>
+              <div class="img-upload-text" id="pdfText">Clique ou glisse<br><strong>PDF</strong> — max 20Mo</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        Publier le cours →
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+// Difficulté
+function selectDiff(val, el) {
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('diffInput').value = val;
+}
+// Sélectionner medium par défaut
+document.querySelector('.diff-btn.medium').classList.add('selected');
+
+// Tags
+let selectedTags = [];
+function toggleTag(el, tag) {
+  el.classList.toggle('selected');
+  if (selectedTags.includes(tag)) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+  } else {
+    selectedTags.push(tag);
+  }
+  document.getElementById('tagsInput').value = selectedTags.join(',');
+}
+
+// Tag personnalisé
+function addCustomTag() {
+  const input = document.getElementById('customTagInput');
+  const tag = input.value.trim();
+  if (!tag || selectedTags.includes(tag)) {
+    input.focus();
+    return;
+  }
+  // Créer le chip dynamiquement
+  const chip = document.createElement('div');
+  chip.className = 'tag-chip selected';
+  chip.textContent = tag;
+  chip.onclick = () => toggleTag(chip, tag);
+  document.getElementById('tagGrid').appendChild(chip);
+  // Ajouter aux sélectionnés
+  selectedTags.push(tag);
+  document.getElementById('tagsInput').value = selectedTags.join(',');
+  input.value = '';
+  input.focus();
+}
+
+// Aperçu image
+function previewImg(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const prev = document.getElementById('imgPreview');
+      prev.src = e.target.result;
+      prev.style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Aperçu PDF
+function previewPdf(input) {
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    const zone = document.getElementById('pdfUploadZone');
+    document.getElementById('pdfIcon').textContent = '✅';
+    document.getElementById('pdfText').innerHTML =
+      '<strong style="color:#00d4ff">' + file.name + '</strong><br>' +
+      '<span style="font-size:.72rem;color:#5b8fa8">' + (file.size/1024/1024).toFixed(2) + ' Mo</span>';
+    zone.style.borderColor = 'rgba(0,212,255,0.5)';
+    zone.style.background = 'rgba(0,212,255,0.05)';
+  }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto;padding:24px 16px">
+
+  <!-- Retour -->
+  <a href="{% url 'forum_list' %}" style="color:var(--muted);text-decoration:none;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">
+    ← Retour au forum
+  </a>
+
+  <!-- Question -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:20px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      {% if question.is_resolved %}
+        <span style="background:rgba(52,211,153,0.15);color:#34d399;padding:3px 10px;border-radius:6px;font-size:.78rem;font-weight:600">✓ Résolu</span>
+      {% endif %}
+      <span style="background:rgba(167,139,250,0.15);color:#a78bfa;padding:3px 10px;border-radius:6px;font-size:.78rem">{{ question.get_subject_display }}</span>
+      {% if question.course %}
+        <span style="background:rgba(99,179,237,0.1);color:#63b3ed;padding:3px 10px;border-radius:6px;font-size:.78rem">{{ question.course.name }}</span>
+      {% endif %}
+    </div>
+
+    <h1 style="font-size:1.35rem;font-weight:700;margin:0 0 12px">{{ question.title }}</h1>
+    <p style="color:var(--text);line-height:1.7;margin:0 0 16px;white-space:pre-wrap">{{ question.content }}</p>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <span style="font-size:.8rem;color:var(--muted)">
+        Posée par <strong style="color:var(--text)">{{ question.author.username }}</strong> · {{ question.created_at|timesince }} · {{ question.views }} vues
+      </span>
+      <!-- Votes question -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="vote('question', {{ question.id }}, 1)" id="vq-up"
+                style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.85rem">
+          👍
+        </button>
+        <span id="vote-count-q" style="font-weight:700;color:var(--text)">{{ question.vote_count }}</span>
+        <button onclick="vote('question', {{ question.id }}, -1)"
+                style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:#f87171;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:.85rem">
+          👎
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Réponses -->
+  <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:14px">
+    {{ answers.count }} réponse{{ answers.count|pluralize }}
+  </h3>
+
+  {% for answer in answers %}
+  <div style="background:{% if answer.is_best %}rgba(52,211,153,0.07){% elif answer.is_ai %}rgba(99,179,237,0.05){% else %}var(--surface){% endif %};
+              border:1px solid {% if answer.is_best %}rgba(52,211,153,0.3){% elif answer.is_ai %}rgba(99,179,237,0.2){% else %}var(--border){% endif %};
+              border-radius:14px;padding:20px;margin-bottom:14px">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        {% if answer.is_best %}
+          <span style="background:rgba(52,211,153,0.2);color:#34d399;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:700">✓ Meilleure réponse</span>
+        {% endif %}
+        {% if answer.is_ai %}
+          <span style="background:rgba(99,179,237,0.15);color:#63b3ed;padding:2px 8px;border-radius:6px;font-size:.75rem">🤖 Assistant IA</span>
+        {% endif %}
+        <span style="font-size:.82rem;color:var(--muted)">
+          <strong style="color:var(--text)">{{ answer.author.username }}</strong> · {{ answer.created_at|timesince }}
+        </span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px">
+        <!-- Voter pour la réponse -->
+        <button onclick="vote('answer', {{ answer.id }}, 1)"
+                style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);color:#34d399;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem">👍</button>
+        <span id="vote-count-a-{{ answer.id }}" style="font-size:.85rem;font-weight:600;color:var(--text)">{{ answer.vote_count }}</span>
+        <button onclick="vote('answer', {{ answer.id }}, -1)"
+                style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.8rem">👎</button>
+        <!-- Marquer meilleure réponse (auteur seulement) -->
+        {% if request.user == question.author and not answer.is_best %}
+          <button onclick="markBest({{ answer.id }})"
+                  style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:#34d399;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:.78rem">
+            ✓ Meilleure
+          </button>
+        {% endif %}
+      </div>
+    </div>
+
+    <p style="color:var(--text);line-height:1.75;margin:0;white-space:pre-wrap">{{ answer.content }}</p>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:40px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:20px">
+    Aucune réponse pour l'instant. Sois le premier à aider !
+  </div>
+  {% endfor %}
+
+  <!-- Formulaire de réponse -->
+  {% if not question.is_resolved %}
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-top:20px">
+    <h4 style="margin:0 0 14px;font-size:1rem;font-weight:600">✍️ Ta réponse</h4>
+    <form method="post">
+      {% csrf_token %}
+      <textarea name="content" required rows="5" placeholder="Partage ta réponse ou ton explication..."
+                style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-size:.9rem;resize:vertical;box-sizing:border-box;margin-bottom:12px"></textarea>
+      <button type="submit" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:.9rem;font-weight:600;cursor:pointer">
+        Publier la réponse
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+const csrf = document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
+
+function vote(target, id, value) {
+  fetch(`/forum/vote/${target}/${id}/`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrf, 'Content-Type': 'application/x-www-form-urlencoded'},
+    body: `value=${value}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    const el = target === 'question'
+      ? document.getElementById('vote-count-q')
+      : document.getElementById(`vote-count-a-${id}`);
+    if (el) el.textContent = data.count;
+  });
+}
+
+function markBest(answerId) {
+  fetch(`/forum/best/${answerId}/`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrf}
+  }).then(() => location.reload());
+}
+</script>
+{% endblock %}

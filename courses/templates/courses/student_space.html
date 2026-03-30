@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .hero { background:linear-gradient(135deg,#1e2a4a,#1a2035); border-radius:22px; padding:36px 40px; margin-bottom:28px; animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both; box-shadow:0 8px 32px rgba(193,68,14,0.25); position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; top:-50px; right:-50px; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.07); }
+  .hero h1 { font-family:'Syne',sans-serif; font-size:1.7rem; font-weight:700; color:#fff; margin-bottom:6px; }
+  .hero p  { color:rgba(255,255,255,0.75); font-size:.88rem; margin:0; }
+
+  .tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:28px; }
+  .tab  { padding:9px 18px; border-radius:99px; border:1.5px solid rgba(139,109,76,0.2); background:var(--surface); color:var(--muted); font-size:.83rem; font-weight:500; cursor:pointer; transition:all .2s; box-shadow:none; }
+  .tab:hover { border-color:rgba(193,68,14,0.3); color:var(--electric); background:var(--surface); }
+  .tab.active { background:linear-gradient(135deg,#1e2a4a,#1a2035); border-color:transparent; color:#fff; box-shadow:0 2px 8px rgba(193,68,14,0.3); }
+
+  .section { display:none; }
+  .section.active { display:block; animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both; }
+
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:20px; }
+  .grid2 { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-bottom:20px; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; transition:all .2s; position:relative; overflow:hidden; box-shadow:none; }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; border-radius:18px 18px 0 0; opacity:0; transition:opacity .2s; }
+  .card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.4); border-color:rgba(139,109,76,0.2); }
+  .card:hover::before { opacity:1; }
+  .card.terra::before { background:linear-gradient(90deg,#4f8ef7,#60a5fa); }
+  .card.sage::before  { background:linear-gradient(90deg,#34d399,#6ee7b7); }
+  .card.gold::before  { background:linear-gradient(90deg,#fbbf24,#f59e0b); }
+  .card.rose::before  { background:linear-gradient(90deg,#f87171,#fca5a5); }
+  .card.blue::before  { background:linear-gradient(90deg,#818cf8,#a5b4fc); }
+  .card.warm::before  { background:linear-gradient(90deg,#8b6914,#c9a84c); }
+
+  .card-icon  { font-size:1.8rem; margin-bottom:12px; }
+  .card-title { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:600; color:var(--text); margin-bottom:6px; }
+  .card-desc  { font-size:.8rem; color:var(--muted); line-height:1.65; margin-bottom:14px; }
+  .card-tag   { display:inline-block; padding:3px 10px; border-radius:99px; font-size:.68rem; font-weight:600; }
+  .tag-terra { background:rgba(79,142,247,0.08); color:var(--electric); }
+  .tag-sage  { background:rgba(52,211,153,0.08);  color:var(--green); }
+  .tag-gold  { background:rgba(251,191,36,0.08); color:var(--yellow); }
+  .tag-rose  { background:rgba(181,83,78,0.08);  color:#b5534e; }
+  .tag-blue  { background:rgba(74,122,171,0.08); color:#4a7aab; }
+  .tag-warm  { background:rgba(139,105,20,0.08); color:#8b6914; }
+
+  .link-card { display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 20px; text-decoration:none; transition:all .2s; margin-bottom:10px; box-shadow:none; }
+  .link-card:hover { border-color:rgba(193,68,14,0.25); transform:translateX(4px); box-shadow:0 4px 12px rgba(139,109,76,0.1); }
+  .link-icon  { font-size:1.4rem; flex-shrink:0; }
+  .link-title { font-size:.88rem; font-weight:600; color:var(--text); margin-bottom:2px; font-family:'Syne',sans-serif; }
+  .link-sub   { font-size:.75rem; color:var(--muted); }
+  .link-arrow { margin-left:auto; color:var(--muted2); font-weight:600; }
+
+  .input-warm { width:100%; background:rgba(255,255,255,0.05) !important; border:1px solid var(--border) !important; border-radius:10px !important; padding:11px 14px !important; font-size:.88rem !important; color:#1c1814 !important; outline:none !important; box-shadow:none !important; margin-bottom:10px; transition:border-color .2s !important; font-family:'DM Sans','Segoe UI',sans-serif; }
+  .input-warm:focus { border-color:rgba(193,68,14,0.4) !important; background:#fff !important; }
+  .input-warm::placeholder { color:#b5a898 !important; }
+
+  .btn-add { padding:11px 22px; background:linear-gradient(135deg,#1e2a4a,#1a2035); border:none; border-radius:10px; color:#fff; font-weight:600; font-size:.88rem; cursor:pointer; transition:all .2s; box-shadow:0 2px 8px rgba(193,68,14,0.25); }
+  .btn-add:hover { transform:translateY(-1px); box-shadow:0 5px 16px rgba(193,68,14,0.4); }
+
+  .expense-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+  .expense-row:last-child { border-bottom:none; }
+  .exp-title  { font-size:.83rem; color:var(--text); font-weight:500; }
+  .exp-cat    { font-size:.7rem; color:var(--muted); }
+  .exp-amount { font-weight:700; font-size:.88rem; }
+  .exp-amount.out { color:var(--electric); }
+  .exp-amount.in  { color:var(--green); }
+
+  .tip-box { background:rgba(79,142,247,0.05); border:1px solid rgba(193,68,14,0.12); border-radius:14px; padding:16px 20px; margin-bottom:12px; display:flex; gap:12px; }
+  .tip-icon  { font-size:1.2rem; flex-shrink:0; }
+  .tip-title { font-family:'Syne',sans-serif; font-size:.88rem; font-weight:600; color:var(--text); margin-bottom:3px; }
+  .tip-text  { font-size:.78rem; color:var(--muted); line-height:1.65; }
+
+  .urgent-card { background:var(--surface); border:1px solid rgba(193,68,14,0.2); border-left:3px solid #c1440e; border-radius:14px; padding:16px 20px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:none; }
+  .urgent-name { font-family:'Syne',sans-serif; font-size:.88rem; font-weight:600; color:var(--text); }
+  .urgent-desc { font-size:.73rem; color:var(--muted); }
+  .urgent-num  { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--electric); white-space:nowrap; }
+
+  .sec-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:8px; margin-top:4px; }
+  .sec-sub   { font-size:.82rem; color:var(--muted); margin-bottom:20px; margin-top:-4px; }
+
+  .stat-num  { font-family:'Syne',sans-serif; font-size:1.7rem; font-weight:700; line-height:1; }
+  .stat-label { font-size:.73rem; color:var(--muted); margin-top:4px; }
+
+  .budget-bar-wrap { background:rgba(139,109,76,0.1); border-radius:99px; height:5px; margin:10px 0 4px; }
+  .budget-bar { height:5px; border-radius:99px; transition:width .8s cubic-bezier(.16,1,.3,1); }
+
+  @media(max-width:768px) { .grid3,.grid2 { grid-template-columns:1fr; } .tabs { gap:6px; } .tab { padding:7px 12px; font-size:.78rem; } }
+</style>
+
+<div class="hero">
+  <h1>🎓 Espace Étudiant</h1>
+  <p>Tout ce dont tu as besoin pour réussir ta vie étudiante — budget, aides, activités, emploi, développement et bien-être.</p>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('budget',this)">💰 Budget</button>
+  <button class="tab" onclick="showTab('aides',this)">🍎 Aides alimentaires</button>
+  <button class="tab" onclick="showTab('activites',this)">🎭 Activités</button>
+  <button class="tab" onclick="showTab('logement',this)">🏠 Logement & Bourses</button>
+  <button class="tab" onclick="showTab('jobs',this)">💼 Jobs & Stages</button>
+  <button class="tab" onclick="showTab('perso',this)">📈 Développement perso</button>
+  <button class="tab" onclick="showTab('sante',this)">🧠 Santé mentale</button>
+</div>
+
+<!-- BUDGET -->
+<div id="tab-budget" class="section active">
+  <div class="sec-title">💰 Gestion du budget</div>
+  <p class="sec-sub">Suis tes revenus et dépenses pour garder le contrôle de tes finances.</p>
+  <div class="grid3" style="margin-bottom:24px">
+    <div class="card sage">
+      <div class="card-icon">💵</div>
+      <div class="card-title">Revenus du mois</div>
+      <div class="stat-num" id="totalRevenu" style="color:#3d6b4f">0 €</div>
+      <div class="budget-bar-wrap"><div class="budget-bar" style="background:linear-gradient(90deg,#3d6b4f,#5a9e72);width:100%"></div></div>
+      <div class="stat-label">Total entrant</div>
+    </div>
+    <div class="card terra">
+      <div class="card-icon">💸</div>
+      <div class="card-title">Dépenses du mois</div>
+      <div class="stat-num" id="totalDepense" style="color:#c1440e">0 €</div>
+      <div class="budget-bar-wrap"><div class="budget-bar" id="depBar" style="background:linear-gradient(90deg,#c1440e,#d4920a);width:0%"></div></div>
+      <div class="stat-label">Total sortant</div>
+    </div>
+    <div class="card gold">
+      <div class="card-icon">🏦</div>
+      <div class="card-title">Solde disponible</div>
+      <div class="stat-num" id="solde" style="color:#d4920a">0 €</div>
+      <div class="budget-bar-wrap"><div class="budget-bar" id="soldeBar" style="background:linear-gradient(90deg,#d4920a,#e8b84d);width:100%"></div></div>
+      <div class="stat-label" id="soldeMsg">Ajoute tes revenus</div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card terra">
+      <div class="card-title" style="margin-bottom:16px">➕ Nouvelle entrée</div>
+      <select class="input-warm" id="entryType"><option value="out">💸 Dépense</option><option value="in">💵 Revenu</option></select>
+      <input type="text" class="input-warm" id="entryTitle" placeholder="Description (ex: Loyer, Bourse...)">
+      <input type="number" class="input-warm" id="entryAmount" placeholder="Montant en €" min="0" step="0.01">
+      <select class="input-warm" id="entryCat">
+        <option value="Autre">Catégorie</option>
+        <option value="Alimentation">🍕 Alimentation</option>
+        <option value="Transport">🚌 Transport</option>
+        <option value="Loyer">🏠 Loyer</option>
+        <option value="Scolarité">📚 Scolarité</option>
+        <option value="Loisirs">🎭 Loisirs</option>
+        <option value="Bourse">🎓 Bourse</option>
+        <option value="Job">💼 Job</option>
+        <option value="Autre">📦 Autre</option>
+      </select>
+      <button class="btn-add" onclick="addEntry()">Ajouter →</button>
+      <button style="margin-top:8px;background:rgba(79,142,247,0.06);border:1px solid rgba(193,68,14,0.18);border-radius:10px;color:var(--electric);padding:8px 16px;font-size:.8rem;cursor:pointer;width:100%" onclick="clearBudget()">🗑 Réinitialiser</button>
+    </div>
+    <div class="card sage">
+      <div class="card-title" style="margin-bottom:16px">📋 Historique</div>
+      <div id="entryList" style="max-height:280px;overflow-y:auto">
+        <div style="text-align:center;color:var(--muted2);font-size:.82rem;padding:40px 0">Aucune entrée encore</div>
+      </div>
+    </div>
+  </div>
+  <div class="sec-title">💡 Conseils budget étudiant</div>
+  <div class="tip-box"><div class="tip-icon">🎯</div><div><div class="tip-title">Règle 50/30/20</div><div class="tip-text">50% pour les besoins essentiels (loyer, nourriture), 30% pour les envies (loisirs, sorties), 20% pour l'épargne ou rembourser des dettes.</div></div></div>
+  <div class="tip-box"><div class="tip-icon">🛒</div><div><div class="tip-title">Faire ses courses malin</div><div class="tip-text">Privilégie les MDD, les marchés en fin de journée, les applis anti-gaspillage comme Too Good To Go et Phénix.</div></div></div>
+  <div class="tip-box"><div class="tip-icon">📱</div><div><div class="tip-title">Traque tes abonnements</div><div class="tip-text">Netflix, Spotify, Adobe... Un abonnement non utilisé c'est de l'argent jeté. Ça peut représenter 50-100€/mois d'économies.</div></div></div>
+</div>
+
+<!-- AIDES ALIMENTAIRES -->
+<div id="tab-aides" class="section">
+  <div class="sec-title">🍎 Aides & Alimentation</div>
+  <p class="sec-sub">Des ressources pour ne jamais manquer de rien, même avec un petit budget.</p>
+  <div class="grid3">
+    <div class="card sage"><div class="card-icon">🏫</div><div class="card-title">Restaurant CROUS</div><div class="card-desc">Repas complet à 3,30€ pour tous les étudiants. 1€ pour les étudiants précaires avec le ticket repas à 1€.</div><span class="card-tag tag-sage">Officiel</span></div>
+    <div class="card gold"><div class="card-icon">🥫</div><div class="card-title">Banques alimentaires</div><div class="card-desc">Distributions gratuites de denrées alimentaires partout en France. Cherche "banque alimentaire" + ta ville.</div><span class="card-tag tag-gold">Gratuit</span></div>
+    <div class="card terra"><div class="card-icon">📱</div><div class="card-title">Too Good To Go</div><div class="card-desc">Récupère des invendus de restaurants et supermarchés à 2-6€ le panier. Télécharge l'appli !</div><span class="card-tag tag-terra">Appli</span></div>
+    <div class="card blue"><div class="card-icon">🤝</div><div class="card-title">Épiceries solidaires</div><div class="card-desc">Courses à -80% du prix normal pour les étudiants en difficulté. Renseigne-toi auprès de ton université.</div><span class="card-tag tag-blue">Campus</span></div>
+    <div class="card rose"><div class="card-icon">🍽️</div><div class="card-title">Aide d'urgence CROUS</div><div class="card-desc">Le CROUS propose des aides financières ponctuelles pour les étudiants en situation précaire.</div><span class="card-tag tag-rose">Urgence</span></div>
+    <div class="card sage"><div class="card-icon">🌿</div><div class="card-title">Phénix & invendus</div><div class="card-desc">Appli de récupération d'invendus alimentaires à prix cassé. Boulangeries, épiceries, grandes surfaces.</div><span class="card-tag tag-sage">Appli</span></div>
+  </div>
+  <div class="sec-title">🔗 Liens utiles</div>
+  <a href="https://www.crous-paris.fr" target="_blank" class="link-card"><div class="link-icon">🎓</div><div><div class="link-title">CROUS — Aides et restaurants</div><div class="link-sub">crous.fr</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.banquealimentaire.org" target="_blank" class="link-card"><div class="link-icon">🥫</div><div><div class="link-title">Banques Alimentaires de France</div><div class="link-sub">banquealimentaire.org</div></div><div class="link-arrow">→</div></a>
+  <a href="https://toogoodtogo.com/fr" target="_blank" class="link-card"><div class="link-icon">📱</div><div><div class="link-title">Too Good To Go</div><div class="link-sub">toogoodtogo.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.1jeune1solution.gouv.fr" target="_blank" class="link-card"><div class="link-icon">💡</div><div><div class="link-title">1jeune1solution — Toutes les aides</div><div class="link-sub">1jeune1solution.gouv.fr</div></div><div class="link-arrow">→</div></a>
+</div>
+
+<!-- ACTIVITÉS -->
+<div id="tab-activites" class="section">
+  <div class="sec-title">🎭 Activités gratuites ou pas chères</div>
+  <p class="sec-sub">Profite pleinement de ta vie étudiante sans te ruiner !</p>
+  <div class="grid3">
+    <div class="card terra"><div class="card-icon">🏛️</div><div class="card-title">Musées gratuits</div><div class="card-desc">La plupart des musées nationaux sont gratuits pour les moins de 26 ans — Louvre, Orsay, Pompidou, Versailles...</div><span class="card-tag tag-terra">Gratuit -26 ans</span></div>
+    <div class="card blue"><div class="card-icon">🎬</div><div class="card-title">Cinéma étudiant</div><div class="card-desc">Tarif réduit avec ta carte étudiante (~5-7€). Les lundis sont souvent moins chers. UGC Illimité à ~22€/mois.</div><span class="card-tag tag-blue">Réduit</span></div>
+    <div class="card sage"><div class="card-icon">🏃</div><div class="card-title">Sport universitaire</div><div class="card-desc">Le SUAPS propose des dizaines d'activités sportives à tarif très réduit ou inclus dans les frais de scolarité.</div><span class="card-tag tag-sage">Campus</span></div>
+    <div class="card gold"><div class="card-icon">📚</div><div class="card-title">Bibliothèques</div><div class="card-desc">BU, médiathèques, BnF — accès gratuit à des milliers de livres, films, musique et espaces de travail calmes.</div><span class="card-tag tag-gold">Gratuit</span></div>
+    <div class="card rose"><div class="card-icon">🎵</div><div class="card-title">Concerts & culture</div><div class="card-desc">Tarifs jeunes dans les salles de concert, opéra, théâtres. Guichet du Jour pour les places à -50%.</div><span class="card-tag tag-rose">Réduction</span></div>
+    <div class="card terra"><div class="card-icon">🌳</div><div class="card-title">Sorties nature</div><div class="card-desc">Randonnées, parcs, plages — totalement gratuit ! Utilise AllTrails pour découvrir des sentiers près de chez toi.</div><span class="card-tag tag-terra">Gratuit</span></div>
+  </div>
+  <div class="sec-title">🔗 Plateformes à connaître</div>
+  <a href="https://www.meetup.com" target="_blank" class="link-card"><div class="link-icon">👥</div><div><div class="link-title">Meetup — Événements gratuits</div><div class="link-sub">meetup.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://shotgun.live" target="_blank" class="link-card"><div class="link-icon">🎉</div><div><div class="link-title">Shotgun — Soirées étudiantes</div><div class="link-sub">shotgun.live</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.guichetdujour.fr" target="_blank" class="link-card"><div class="link-icon">🎭</div><div><div class="link-title">Guichet du Jour — Culture à -50%</div><div class="link-sub">guichetdujour.fr</div></div><div class="link-arrow">→</div></a>
+</div>
+
+<!-- LOGEMENT -->
+<div id="tab-logement" class="section">
+  <div class="sec-title">🏠 Logement & Aides financières</div>
+  <p class="sec-sub">Toutes les aides auxquelles tu as peut-être droit sans le savoir.</p>
+  <div class="grid2">
+    <div class="card blue"><div class="card-icon">🏦</div><div class="card-title">APL — Aide Personnalisée au Logement</div><div class="card-desc">Jusqu'à 300€/mois selon tes revenus et ton loyer. À demander sur le site de la CAF dès la signature du bail.</div><span class="card-tag tag-blue">CAF</span></div>
+    <div class="card terra"><div class="card-icon">🎓</div><div class="card-title">Bourses sur critères sociaux</div><div class="card-desc">De l'échelon 0 bis à l'échelon 7 (100€ à 600€/mois). Dossier à déposer sur le portail DSE CROUS chaque année.</div><span class="card-tag tag-terra">CROUS</span></div>
+    <div class="card sage"><div class="card-icon">🏢</div><div class="card-title">Résidences CROUS</div><div class="card-desc">Logements étudiants à partir de 150€/mois charges comprises. Faire la demande tôt !</div><span class="card-tag tag-sage">Logement</span></div>
+    <div class="card gold"><div class="card-icon">🤝</div><div class="card-title">Garantie Visale</div><div class="card-desc">Garant gratuit par Action Logement pour les étudiants sans garant physique. Accepté par la majorité des propriétaires.</div><span class="card-tag tag-gold">Gratuit</span></div>
+    <div class="card rose"><div class="card-icon">💊</div><div class="card-title">CSS — Complémentaire santé</div><div class="card-desc">Mutuelle santé gratuite ou réduite pour les revenus modestes. À demander directement à l'Assurance Maladie.</div><span class="card-tag tag-rose">Santé</span></div>
+    <div class="card blue"><div class="card-icon">🚌</div><div class="card-title">Aides transport</div><div class="card-desc">Tarifs réduits dans les transports. Certaines régions remboursent jusqu'à 50% des abonnements étudiants.</div><span class="card-tag tag-blue">Transport</span></div>
+  </div>
+  <div class="sec-title">🔗 Sites officiels</div>
+  <a href="https://www.caf.fr" target="_blank" class="link-card"><div class="link-icon">🏦</div><div><div class="link-title">CAF.fr — APL et aides logement</div><div class="link-sub">caf.fr</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.messervices.etudiant.gouv.fr" target="_blank" class="link-card"><div class="link-icon">🎓</div><div><div class="link-title">MesServices.etudiant.gouv.fr — Bourse DSE</div><div class="link-sub">messervices.etudiant.gouv.fr</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.visale.fr" target="_blank" class="link-card"><div class="link-icon">🤝</div><div><div class="link-title">Visale — Garant gratuit</div><div class="link-sub">visale.fr</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.1jeune1solution.gouv.fr" target="_blank" class="link-card"><div class="link-icon">💡</div><div><div class="link-title">Simule toutes tes aides</div><div class="link-sub">1jeune1solution.gouv.fr</div></div><div class="link-arrow">→</div></a>
+</div>
+
+<!-- JOBS -->
+<div id="tab-jobs" class="section">
+  <div class="sec-title">💼 Jobs étudiants & Stages</div>
+  <p class="sec-sub">Financer tes études et booster ton CV dès maintenant.</p>
+  <div class="grid3">
+    <div class="card terra"><div class="card-icon">🎓</div><div class="card-title">Tutorat & cours particuliers</div><div class="card-desc">Donne des cours via Superprof, Apprentus ou directement. 15-40€/h selon la matière. Parfait avec les cours.</div><span class="card-tag tag-terra">Flexible</span></div>
+    <div class="card blue"><div class="card-icon">💻</div><div class="card-title">Freelance en ligne</div><div class="card-desc">Rédaction, graphisme, développement, traduction sur Malt, Fiverr, Upwork. Commence avec tes compétences actuelles.</div><span class="card-tag tag-blue">Freelance</span></div>
+    <div class="card sage"><div class="card-icon">📋</div><div class="card-title">Stages gratifiés</div><div class="card-desc">LinkedIn, Indeed, Welcome to the Jungle. Minimum légal : 4,35€/h pour un stage de +2 mois.</div><span class="card-tag tag-sage">Expérience</span></div>
+    <div class="card gold"><div class="card-icon">🏪</div><div class="card-title">Jobs saisonniers</div><div class="card-desc">Restauration, événementiel, commerce — nombreux en été et à Noël. Candidature directe recommandée.</div><span class="card-tag tag-gold">Saisonnier</span></div>
+    <div class="card rose"><div class="card-icon">🏛️</div><div class="card-title">Vacataire universitaire</div><div class="card-desc">Jobs à la bibliothèque, à l'administration ou comme moniteur étudiant — stables et compatibles avec les cours.</div><span class="card-tag tag-rose">Campus</span></div>
+    <div class="card terra"><div class="card-icon">🌍</div><div class="card-title">VIE & Erasmus+</div><div class="card-desc">Volontariat International en Entreprise ou Erasmus+ pour une expérience rémunérée à l'étranger.</div><span class="card-tag tag-terra">International</span></div>
+  </div>
+  <div class="sec-title">🔗 Plateformes emploi</div>
+  <a href="https://www.linkedin.com/jobs" target="_blank" class="link-card"><div class="link-icon">💼</div><div><div class="link-title">LinkedIn Jobs</div><div class="link-sub">linkedin.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.welcometothejungle.com" target="_blank" class="link-card"><div class="link-icon">🌴</div><div><div class="link-title">Welcome to the Jungle</div><div class="link-sub">welcometothejungle.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.superprof.fr" target="_blank" class="link-card"><div class="link-icon">🎓</div><div><div class="link-title">Superprof — Cours particuliers</div><div class="link-sub">superprof.fr</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.malt.fr" target="_blank" class="link-card"><div class="link-icon">🖥️</div><div><div class="link-title">Malt — Freelance</div><div class="link-sub">malt.fr</div></div><div class="link-arrow">→</div></a>
+</div>
+
+<!-- DÉVELOPPEMENT PERSO -->
+<div id="tab-perso" class="section">
+  <div class="sec-title">📈 Développement personnel</div>
+  <p class="sec-sub">Les meilleures ressources gratuites ou abordables pour progresser.</p>
+  <div class="grid3">
+    <div class="card terra"><div class="card-icon">📖</div><div class="card-title">Lecture gratuite</div><div class="card-desc">Project Gutenberg, OpenLibrary, Gallica (BnF) — des milliers de livres gratuits légalement disponibles en ligne.</div><span class="card-tag tag-terra">Gratuit</span></div>
+    <div class="card blue"><div class="card-icon">🎙️</div><div class="card-title">Podcasts</div><div class="card-desc">Thinkerview, Choses à Savoir, No Limit Secu... Des centaines d'heures de contenu gratuit sur tous les sujets.</div><span class="card-tag tag-blue">Gratuit</span></div>
+    <div class="card sage"><div class="card-icon">💻</div><div class="card-title">MOOC & certifications</div><div class="card-desc">Coursera, edX, OpenClassrooms — certifications reconnues. GitHub Student Pack : 200+ outils gratuits.</div><span class="card-tag tag-sage">Certifiant</span></div>
+    <div class="card gold"><div class="card-icon">🗣️</div><div class="card-title">Langues étrangères</div><div class="card-desc">Duolingo gratuit, HelloTalk pour pratiquer avec des natifs. Un atout CV majeur — vise le TOEIC ou le DELF.</div><span class="card-tag tag-gold">Compétence</span></div>
+    <div class="card rose"><div class="card-icon">🧘</div><div class="card-title">Soft skills</div><div class="card-desc">Leadership, communication, gestion du temps. Rejoins des assos sur ton campus pour développer ces compétences !</div><span class="card-tag tag-rose">Transversal</span></div>
+    <div class="card terra"><div class="card-icon">🤝</div><div class="card-title">Networking étudiant</div><div class="card-desc">Forum entreprises, afterworks, LinkedIn — construis ton réseau maintenant. Les opportunités viennent des contacts.</div><span class="card-tag tag-terra">Carrière</span></div>
+  </div>
+  <div class="sec-title">🔗 Ressources incontournables</div>
+  <a href="https://www.coursera.org" target="_blank" class="link-card"><div class="link-icon">🎓</div><div><div class="link-title">Coursera — MOOC gratuits (audit)</div><div class="link-sub">coursera.org</div></div><div class="link-arrow">→</div></a>
+  <a href="https://education.github.com/pack" target="_blank" class="link-card"><div class="link-icon">💻</div><div><div class="link-title">GitHub Student Pack — 200+ outils gratuits</div><div class="link-sub">education.github.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.duolingo.com" target="_blank" class="link-card"><div class="link-icon">🦜</div><div><div class="link-title">Duolingo — Langues gratuites</div><div class="link-sub">duolingo.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://openclassrooms.com" target="_blank" class="link-card"><div class="link-icon">📚</div><div><div class="link-title">OpenClassrooms — Formations certifiantes</div><div class="link-sub">openclassrooms.com</div></div><div class="link-arrow">→</div></a>
+</div>
+
+<!-- SANTÉ MENTALE -->
+<div id="tab-sante" class="section">
+  <div class="sec-title">🧠 Santé mentale & Bien-être</div>
+  <p class="sec-sub">Prendre soin de soi n'est pas un luxe — c'est une nécessité pour réussir.</p>
+  <div class="grid3" style="margin-bottom:28px">
+    <div class="card sage"><div class="card-icon">🧘</div><div class="card-title">Méditation</div><div class="card-desc">10 minutes de méditation par jour réduisent le stress. Petit Bambou et Headspace ont des versions gratuites.</div><span class="card-tag tag-sage">Quotidien</span></div>
+    <div class="card blue"><div class="card-icon">🏃</div><div class="card-title">Sport & Endorphines</div><div class="card-desc">30 min de sport 3x/semaine améliorent l'humeur et la concentration. Le SUAPS de ton université est souvent gratuit.</div><span class="card-tag tag-blue">Bien-être</span></div>
+    <div class="card gold"><div class="card-icon">😴</div><div class="card-title">Sommeil</div><div class="card-desc">7-9h par nuit sont indispensables à l'apprentissage. Évite les écrans 1h avant de dormir. Le sommeil c'est sacré !</div><span class="card-tag tag-gold">Santé</span></div>
+  </div>
+  <div class="sec-title">🆘 Numéros d'aide</div>
+  <div class="urgent-card"><div><div class="urgent-name">3114 — Prévention du Suicide</div><div class="urgent-desc">Disponible 24h/24, 7j/7 — professionnels de santé à l'écoute</div></div><div class="urgent-num">3114</div></div>
+  <div class="urgent-card"><div><div class="urgent-name">Nightline France — Écoute étudiante</div><div class="urgent-desc">Par des étudiants, pour des étudiants — disponible les soirs et nuits</div></div><div class="urgent-num">01 88 32 12 32</div></div>
+  <div class="urgent-card"><div><div class="urgent-name">SOS Amitié — Écoute bienveillante</div><div class="urgent-desc">Anonyme, gratuit, disponible 24h/24</div></div><div class="urgent-num">09 72 39 40 50</div></div>
+  <div class="urgent-card"><div><div class="urgent-name">SUMPPS — Psychologue universitaire</div><div class="urgent-desc">Suivi psychologique gratuit dans ton université — renseigne-toi à l'accueil</div></div><div class="urgent-num">Ton université</div></div>
+  <div class="sec-title" style="margin-top:24px">💡 Habitudes quotidiennes</div>
+  <div class="tip-box"><div class="tip-icon">📓</div><div><div class="tip-title">Journaling</div><div class="tip-text">Écrire 5 minutes par jour sur tes pensées clarifie l'esprit et réduit l'anxiété. Un simple carnet suffit.</div></div></div>
+  <div class="tip-box"><div class="tip-icon">👥</div><div><div class="tip-title">Parle à quelqu'un</div><div class="tip-text">Ne reste pas seul avec tes difficultés. Amis, famille, psychologue universitaire — demander de l'aide est un signe de force.</div></div></div>
+  <div class="tip-box"><div class="tip-icon">📵</div><div><div class="tip-title">Détox numérique</div><div class="tip-text">1h sans téléphone par jour minimum. Les réseaux amplifient souvent les émotions négatives et la comparaison sociale.</div></div></div>
+  <div class="sec-title">🔗 Ressources</div>
+  <a href="https://nightline.fr" target="_blank" class="link-card"><div class="link-icon">🌙</div><div><div class="link-title">Nightline France</div><div class="link-sub">nightline.fr</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.petitbambou.com" target="_blank" class="link-card"><div class="link-icon">🎋</div><div><div class="link-title">Petit Bambou — Méditation guidée</div><div class="link-sub">petitbambou.com</div></div><div class="link-arrow">→</div></a>
+  <a href="https://www.santementale.fr" target="_blank" class="link-card"><div class="link-icon">🧠</div><div><div class="link-title">SantéMentale.fr</div><div class="link-sub">santementale.fr</div></div><div class="link-arrow">→</div></a>
+</div>
+
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+let entries = JSON.parse(localStorage.getItem('skh_budget_v2') || '[]');
+renderBudget();
+function addEntry() {
+  const type=document.getElementById('entryType').value, title=document.getElementById('entryTitle').value.trim(), amount=parseFloat(document.getElementById('entryAmount').value), cat=document.getElementById('entryCat').value;
+  if(!title||isNaN(amount)||amount<=0){alert('Remplis tous les champs !');return;}
+  entries.unshift({type,title,amount,cat,date:new Date().toLocaleDateString('fr-FR')});
+  localStorage.setItem('skh_budget_v2',JSON.stringify(entries));
+  document.getElementById('entryTitle').value=''; document.getElementById('entryAmount').value='';
+  renderBudget();
+}
+function clearBudget(){if(confirm('Réinitialiser tout le budget ?')){entries=[];localStorage.setItem('skh_budget_v2',JSON.stringify(entries));renderBudget();}}
+function renderBudget(){
+  const rev=entries.filter(e=>e.type==='in').reduce((s,e)=>s+e.amount,0);
+  const dep=entries.filter(e=>e.type==='out').reduce((s,e)=>s+e.amount,0);
+  const sol=rev-dep;
+  document.getElementById('totalRevenu').textContent=rev.toFixed(2)+' €';
+  document.getElementById('totalDepense').textContent=dep.toFixed(2)+' €';
+  const soldeEl=document.getElementById('solde');
+  soldeEl.textContent=sol.toFixed(2)+' €'; soldeEl.style.color=sol>=0?'#3d6b4f':'#c1440e';
+  const pct=rev>0?Math.min((dep/rev)*100,100):0;
+  document.getElementById('depBar').style.width=pct+'%';
+  document.getElementById('soldeMsg').textContent=sol>0?`Il te reste ${sol.toFixed(2)} € disponibles`:sol<0?`Attention — tu es en déficit de ${Math.abs(sol).toFixed(2)} €`:'Ajoute tes revenus et dépenses';
+  const list=document.getElementById('entryList');
+  if(entries.length===0){list.innerHTML='<div style="text-align:center;color:var(--muted2);font-size:.82rem;padding:40px 0">Aucune entrée encore</div>';return;}
+  list.innerHTML=entries.slice(0,20).map(e=>`<div class="expense-row"><div><div class="exp-title">${e.title}</div><div class="exp-cat">${e.cat} · ${e.date}</div></div><div class="exp-amount ${e.type==='out'?'out':'in'}">${e.type==='out'?'-':'+'}${e.amount.toFixed(2)} €</div></div>`).join('');
+}
+</script>
+{% endblock %}

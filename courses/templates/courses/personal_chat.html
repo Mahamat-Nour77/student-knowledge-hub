@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .hero{background:linear-gradient(135deg,#1e2a4a,#1a2035);border:1px solid rgba(167,139,250,0.2);border-radius:20px;padding:28px 32px;margin-bottom:28px;animation:fadeUp .5s both;}
+  .hero h1{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:#f0f2ff;margin-bottom:4px;}
+  .hero p{color:rgba(240,242,255,0.5);font-size:.83rem;margin:0;}
+  .chat-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:28px;margin-bottom:20px;animation:fadeUp .5s .1s both;}
+  .msg-user{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);border-radius:14px 14px 4px 14px;padding:14px 18px;margin-bottom:16px;font-size:.88rem;color:var(--text);}
+  .msg-user .label{font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#a78bfa;margin-bottom:6px;}
+  .msg-ai{background:rgba(79,142,247,0.06);border:1px solid rgba(79,142,247,0.15);border-radius:4px 14px 14px 14px;padding:14px 18px;margin-bottom:16px;font-size:.88rem;color:var(--text);line-height:1.7;}
+  .msg-ai .label{font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--electric);margin-bottom:6px;}
+  .empty-chat{text-align:center;padding:40px 20px;color:var(--muted);font-size:.85rem;}
+  .input-area{display:flex;gap:10px;align-items:flex-end;}
+  .chat-input{flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:13px 16px;font-size:.88rem;color:var(--text);outline:none;font-family:'Inter',sans-serif;resize:none;min-height:50px;}
+  .chat-input:focus{border-color:rgba(167,139,250,0.5);}
+  .btn-send{padding:13px 22px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border:none;border-radius:12px;color:#fff;font-weight:700;font-size:.88rem;cursor:pointer;white-space:nowrap;}
+  .btn-send:hover{box-shadow:0 4px 14px rgba(167,139,250,0.4);}
+  .btn-back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.82rem;text-decoration:none;margin-bottom:20px;}
+  .btn-back:hover{color:var(--text);}
+  .suggestions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .sug-btn{padding:6px 14px;border-radius:99px;font-size:.75rem;font-weight:500;border:1px solid rgba(167,139,250,0.25);background:rgba(167,139,250,0.07);color:#a78bfa;cursor:pointer;transition:all .15s;}
+  .sug-btn:hover{background:rgba(167,139,250,0.15);}
+</style>
+
+<a href="{% url 'my_documents' %}" class="btn-back">← Retour à ma bibliothèque</a>
+
+<div class="hero">
+  <h1>💬 Chat IA — {{ document.title }}</h1>
+  <p>Pose des questions sur ton document, l'IA répond en se basant uniquement sur son contenu</p>
+</div>
+
+<div class="chat-box">
+  {% if question and answer %}
+  <div class="msg-user">
+    <div class="label">👤 Toi</div>
+    {{ question }}
+  </div>
+  <div class="msg-ai">
+    <div class="label">🤖 Assistant IA</div>
+    {{ answer|linebreaks }}
+  </div>
+  {% else %}
+  <div class="empty-chat">
+    <div style="font-size:2rem;margin-bottom:8px">💬</div>
+    Pose ta première question sur le document !
+  </div>
+  {% endif %}
+</div>
+
+<div class="suggestions">
+  <button class="sug-btn" onclick="setQ('Résume les points principaux de ce document')">📋 Points principaux</button>
+  <button class="sug-btn" onclick="setQ('Quels sont les concepts clés à retenir ?')">🔑 Concepts clés</button>
+  <button class="sug-btn" onclick="setQ('Donne-moi des exemples tirés du document')">💡 Exemples</button>
+  <button class="sug-btn" onclick="setQ('Qu\'est-ce que je dois absolument savoir pour un examen ?')">📚 Pour l'examen</button>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="input-area">
+    <textarea name="question" class="chat-input" id="questionInput" placeholder="Ex: Qu'est-ce que le théorème de Pythagore dans ce cours ?" rows="2">{{ question }}</textarea>
+    <button type="submit" class="btn-send" id="sendBtn">Envoyer →</button>
+  </div>
+</form>
+
+<script>
+function setQ(text) {
+  document.getElementById('questionInput').value = text;
+  document.getElementById('questionInput').focus();
+}
+document.querySelector('form').addEventListener('submit', function() {
+  const btn = document.getElementById('sendBtn');
+  btn.textContent = '⏳...';
+  btn.disabled = true;
+});
+document.getElementById('questionInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    this.closest('form').submit();
+  }
+});
+</script>
+{% endblock %}

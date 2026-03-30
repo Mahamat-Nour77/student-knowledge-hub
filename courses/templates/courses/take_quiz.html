@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  body { background:#0b0f1a !important; }
+  .quiz-wrap { max-width:720px; margin:32px auto; }
+
+  /* Header */
+  .quiz-header {
+    background:rgba(11,15,26,0.85); border:1px solid rgba(255,255,255,0.08);
+    border-radius:20px; padding:24px 28px; margin-bottom:24px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  }
+  .quiz-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:#e8eaf0; }
+  .quiz-meta  { font-size:.78rem; color:#6b7280; margin-top:3px; }
+  .quiz-count { font-size:.82rem; color:#a78bfa; font-weight:600; }
+
+  /* Progress */
+  .progress-bar-wrap { background:rgba(255,255,255,0.06); border-radius:99px; height:4px; margin-bottom:28px; }
+  .progress-bar-fill { height:4px; border-radius:99px; background:linear-gradient(90deg,#7c3aed,#3b82f6); transition:width .4s; }
+
+  /* Question card */
+  .q-card {
+    background:rgba(11,15,26,0.85); border:1px solid rgba(255,255,255,0.08);
+    border-radius:20px; padding:28px; margin-bottom:16px;
+    animation:fadeUp .4s cubic-bezier(.16,1,.3,1) both;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .q-number { font-size:.7rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:#7c3aed; margin-bottom:8px; }
+  .q-text   { font-size:.97rem; font-weight:600; color:#e8eaf0; line-height:1.5; margin-bottom:20px; }
+
+  .choices { display:flex; flex-direction:column; gap:10px; }
+  .choice-label {
+    display:flex; align-items:center; gap:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:13px 16px; cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .choice-label:hover { border-color:rgba(124,58,237,0.4); background:rgba(124,58,237,0.07); }
+  .choice-label input[type="radio"] { display:none; }
+  .choice-label input[type="radio"]:checked ~ .choice-text { color:#a78bfa; }
+  .choice-label:has(input:checked) { border-color:rgba(124,58,237,0.5); background:rgba(124,58,237,0.1); }
+  .choice-key {
+    width:28px; height:28px; border-radius:7px; flex-shrink:0;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.78rem; font-weight:700; color:#9ca3af;
+    transition:background .15s, color .15s;
+  }
+  .choice-label:has(input:checked) .choice-key { background:rgba(124,58,237,0.3); color:#a78bfa; border-color:rgba(124,58,237,0.4); }
+  .choice-text { font-size:.88rem; color:#d1d5db; }
+
+  /* Submit */
+  .quiz-footer { margin-top:28px; text-align:center; }
+  .btn-submit-quiz {
+    padding:14px 40px; background:linear-gradient(135deg,#7c3aed,#3b82f6);
+    border:none; border-radius:12px; color:#fff; font-size:.95rem; font-weight:700;
+    letter-spacing:.04em; cursor:pointer; transition:transform .15s, box-shadow .2s;
+  }
+  .btn-submit-quiz:hover { transform:translateY(-1px); box-shadow:0 8px 28px rgba(124,58,237,0.45); }
+  .unanswered-warning { display:none; color:#f87171; font-size:.8rem; margin-top:10px; }
+</style>
+
+<div class="quiz-wrap">
+  <div class="quiz-header">
+    <div>
+      <div class="quiz-title">🧠 {{ quiz.title }}</div>
+      <div class="quiz-meta">📄 {{ quiz.document.title }} — {{ quiz.document.course.name }}</div>
+    </div>
+    <div class="quiz-count">{{ questions|length }} questions</div>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <form method="post" id="quizForm">
+    {% csrf_token %}
+    {% for q in questions %}
+      <div class="q-card" style="animation-delay:{{ forloop.counter0 }}00ms">
+        <div class="q-number">Question {{ forloop.counter }} / {{ questions|length }}</div>
+        <div class="q-text">{{ q.question }}</div>
+        <div class="choices">
+          {% for letter, text in q.choice_a|add:"|||"|add:q.choice_b|add:"|||"|add:q.choice_c|add:"|||"|add:q.choice_d %}{% endfor %}
+
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="A" onchange="updateProgress()">
+            <span class="choice-key">A</span>
+            <span class="choice-text">{{ q.choice_a }}</span>
+          </label>
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="B" onchange="updateProgress()">
+            <span class="choice-key">B</span>
+            <span class="choice-text">{{ q.choice_b }}</span>
+          </label>
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="C" onchange="updateProgress()">
+            <span class="choice-key">C</span>
+            <span class="choice-text">{{ q.choice_c }}</span>
+          </label>
+          <label class="choice-label">
+            <input type="radio" name="q_{{ q.id }}" value="D" onchange="updateProgress()">
+            <span class="choice-key">D</span>
+            <span class="choice-text">{{ q.choice_d }}</span>
+          </label>
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="quiz-footer">
+      <button type="submit" class="btn-submit-quiz">Soumettre mes réponses →</button>
+      <div class="unanswered-warning" id="warning">⚠ Réponds à toutes les questions avant de soumettre.</div>
+    </div>
+  </form>
+</div>
+
+<script>
+const totalQ = {{ questions|length }};
+
+function updateProgress() {
+  const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+  const pct = (answered / totalQ) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+document.getElementById('quizForm').addEventListener('submit', function(e) {
+  const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+  if (answered < totalQ) {
+    e.preventDefault();
+    document.getElementById('warning').style.display = 'block';
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  }
+});
+</script>
+{% endblock %}

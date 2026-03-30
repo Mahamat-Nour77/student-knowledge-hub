@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:900px;margin:0 auto;padding:24px 16px">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="font-size:1.6rem;font-weight:700;margin:0">💬 Forum d'entraide</h2>
+      <p style="color:var(--muted);margin:4px 0 0;font-size:.9rem">
+        {{ total_questions }} questions · {{ total_resolved }} résolues
+      </p>
+    </div>
+    <a href="{% url 'forum_ask' %}" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:600;font-size:.9rem">
+      + Poser une question
+    </a>
+  </div>
+
+  <!-- Filtres -->
+  <form method="get" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;background:var(--surface);padding:16px;border-radius:12px;border:1px solid var(--border)">
+    <input name="q" value="{{ request.GET.q }}" placeholder="Rechercher..." style="flex:1;min-width:160px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem">
+    <select name="subject" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem">
+      <option value="">Toutes les matières</option>
+      {% for val,label in subject_choices %}
+        <option value="{{ val }}" {% if current_subject == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem">
+      <option value="">Toutes</option>
+      <option value="open" {% if current_status == "open" %}selected{% endif %}>Ouvertes</option>
+      <option value="resolved" {% if current_status == "resolved" %}selected{% endif %}>Résolues</option>
+    </select>
+    <select name="sort" style="background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.85rem">
+      <option value="recent" {% if current_sort == "recent" %}selected{% endif %}>Récentes</option>
+      <option value="votes" {% if current_sort == "votes" %}selected{% endif %}>Plus votées</option>
+      <option value="answers" {% if current_sort == "answers" %}selected{% endif %}>Plus répondues</option>
+    </select>
+    <button type="submit" style="background:rgba(99,179,237,0.15);color:#63b3ed;border:1px solid rgba(99,179,237,0.3);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:.85rem">Filtrer</button>
+  </form>
+
+  <!-- Liste des questions -->
+  {% for q in questions %}
+  <a href="{% url 'forum_detail' q.id %}" style="text-decoration:none">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:border-color .15s;display:flex;gap:16px;align-items:flex-start"
+         onmouseover="this.style.borderColor='rgba(99,179,237,0.4)'" onmouseout="this.style.borderColor='var(--border)'">
+
+      <!-- Votes -->
+      <div style="text-align:center;min-width:40px">
+        <div style="font-size:1.1rem;font-weight:700;color:{% if q.nb_votes > 0 %}#63b3ed{% else %}var(--muted){% endif %}">
+          {{ q.nb_votes|default:0 }}
+        </div>
+        <div style="font-size:.7rem;color:var(--muted)">votes</div>
+      </div>
+
+      <!-- Réponses -->
+      <div style="text-align:center;min-width:40px">
+        <div style="font-size:1.1rem;font-weight:700;color:{% if q.is_resolved %}#34d399{% elif q.nb_answers > 0 %}#a78bfa{% else %}var(--muted){% endif %}">
+          {{ q.nb_answers|default:0 }}
+        </div>
+        <div style="font-size:.7rem;color:var(--muted)">réponses</div>
+      </div>
+
+      <!-- Contenu -->
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+          {% if q.is_resolved %}
+            <span style="background:rgba(52,211,153,0.15);color:#34d399;padding:2px 8px;border-radius:6px;font-size:.75rem;font-weight:600">✓ Résolu</span>
+          {% endif %}
+          <span style="background:rgba(167,139,250,0.15);color:#a78bfa;padding:2px 8px;border-radius:6px;font-size:.75rem">{{ q.get_subject_display }}</span>
+          {% if q.course %}
+            <span style="color:var(--muted);font-size:.75rem">{{ q.course.name }}</span>
+          {% endif %}
+        </div>
+        <div style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:4px">{{ q.title }}</div>
+        <div style="font-size:.83rem;color:var(--muted)">
+          par <strong style="color:var(--text)">{{ q.author.username }}</strong> ·
+          {{ q.created_at|timesince }} · {{ q.views }} vues
+        </div>
+      </div>
+    </div>
+  </a>
+  {% empty %}
+  <div style="text-align:center;padding:60px 20px;color:var(--muted)">
+    <div style="font-size:3rem;margin-bottom:12px">🤔</div>
+    <p>Aucune question pour le moment.</p>
+    <a href="{% url 'forum_ask' %}" style="color:#63b3ed">Sois le premier à poser une question !</a>
+  </div>
+  {% endfor %}
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div style="display:flex;justify-content:center;gap:8px;margin-top:24px">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&sort={{ current_sort }}" style="padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none">← Précédent</a>
+    {% endif %}
+    <span style="padding:8px 16px;color:var(--muted);font-size:.85rem">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&sort={{ current_sort }}" style="padding:8px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none">Suivant →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

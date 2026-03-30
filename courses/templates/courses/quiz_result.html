@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  body { background:#0b0f1a !important; }
+  .result-wrap { max-width:720px; margin:32px auto; }
+
+  /* Score card */
+  .score-card {
+    border-radius:24px; padding:40px; text-align:center; margin-bottom:28px;
+    animation:fadeUp .6s cubic-bezier(.16,1,.3,1) both;
+  }
+  {% if result.percentage >= 80 %}
+  .score-card { background:linear-gradient(135deg,rgba(52,211,153,0.18),rgba(59,130,246,0.12)); border:1px solid rgba(52,211,153,0.25); }
+  {% elif result.percentage >= 50 %}
+  .score-card { background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(59,130,246,0.1)); border:1px solid rgba(251,191,36,0.22); }
+  {% else %}
+  .score-card { background:linear-gradient(135deg,rgba(248,113,113,0.15),rgba(124,58,237,0.1)); border:1px solid rgba(248,113,113,0.22); }
+  {% endif %}
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+  .score-emoji { font-size:3rem; margin-bottom:12px; }
+  .score-pct   { font-family:'Syne',sans-serif; font-size:4rem; font-weight:800; line-height:1; margin-bottom:6px;
+    {% if result.percentage >= 80 %}color:#34d399;{% elif result.percentage >= 50 %}color:#fbbf24;{% else %}color:#f87171;{% endif %} }
+  .score-label { font-size:1rem; font-weight:600; color:#e8eaf0; margin-bottom:4px; }
+  .score-detail { font-size:.85rem; color:#6b7280; }
+
+  /* Stats row */
+  .result-stats {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px;
+    animation:fadeUp .6s cubic-bezier(.16,1,.3,1) .08s both;
+  }
+  .rs-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:18px; text-align:center; }
+  .rs-num   { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; color:#e8eaf0; }
+  .rs-label { font-size:.73rem; color:#6b7280; margin-top:3px; }
+  .rs-correct { color:#34d399 !important; }
+  .rs-wrong   { color:#f87171 !important; }
+
+  /* Corrigé */
+  .corrige-title { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; color:#e8eaf0; margin-bottom:16px; }
+  .q-review {
+    background:rgba(11,15,26,0.85); border:1px solid rgba(255,255,255,0.07);
+    border-radius:18px; padding:22px 24px; margin-bottom:14px;
+    animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+  }
+  .q-review.correct { border-color:rgba(52,211,153,0.25); }
+  .q-review.wrong   { border-color:rgba(248,113,113,0.25); }
+
+  .q-status { display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; margin-bottom:8px; }
+  .q-status.ok  { color:#34d399; }
+  .q-status.bad { color:#f87171; }
+  .q-text-review { font-size:.9rem; font-weight:600; color:#e8eaf0; margin-bottom:14px; line-height:1.5; }
+
+  .choices-review { display:flex; flex-direction:column; gap:7px; margin-bottom:12px; }
+  .cr-choice {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px; border-radius:10px;
+    font-size:.83rem; border:1px solid transparent;
+  }
+  .cr-choice.is-correct { background:rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.25); color:#34d399; }
+  .cr-choice.is-wrong   { background:rgba(248,113,113,0.1); border-color:rgba(248,113,113,0.25); color:#f87171; }
+  .cr-choice.neutral    { color:#6b7280; }
+  .cr-key { width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:700; flex-shrink:0; }
+
+  .explanation-box { background:rgba(99,179,237,0.08); border:1px solid rgba(99,179,237,0.15); border-radius:10px; padding:12px 14px; font-size:.8rem; color:#9ca3af; line-height:1.6; }
+  .explanation-box strong { color:#63b3ed; }
+
+  /* Actions */
+  .result-actions { display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap; }
+  .btn-action {
+    padding:12px 24px; border-radius:12px; font-size:.9rem; font-weight:600;
+    text-decoration:none; transition:transform .15s, box-shadow .2s; border:none; cursor:pointer;
+  }
+  .btn-retry  { background:linear-gradient(135deg,#7c3aed,#3b82f6); color:#fff; }
+  .btn-retry:hover  { transform:translateY(-1px); box-shadow:0 6px 20px rgba(124,58,237,0.4); color:#fff; }
+  .btn-back   { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1) !important; color:#9ca3af; }
+  .btn-back:hover   { background:rgba(255,255,255,0.1); color:#e8eaf0; }
+  .btn-history { background:rgba(15,118,110,0.2); border:1px solid rgba(15,118,110,0.3) !important; color:#34d399; }
+  .btn-history:hover { background:rgba(15,118,110,0.3); color:#34d399; }
+</style>
+
+<div class="result-wrap">
+
+  <!-- Score -->
+  <div class="score-card">
+    <div class="score-emoji">
+      {% if result.percentage >= 80 %}🏆{% elif result.percentage >= 50 %}📈{% else %}💪{% endif %}
+    </div>
+    <div class="score-pct">{{ result.percentage }}%</div>
+    <div class="score-label">
+      {% if result.percentage >= 80 %}Excellent travail !{% elif result.percentage >= 50 %}Pas mal, continue !{% else %}À retravailler{% endif %}
+    </div>
+    <div class="score-detail">{{ result.score }} bonne{{ result.score|pluralize }} réponse{{ result.score|pluralize }} sur {{ result.total }}</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="result-stats">
+    <div class="rs-card">
+      <div class="rs-num rs-correct">{{ result.score }}</div>
+      <div class="rs-label">Correctes ✓</div>
+    </div>
+    <div class="rs-card">
+      <div class="rs-num rs-wrong">{{ result.total|add:"-"|add:result.score }}</div>
+      <div class="rs-label">Incorrectes ✗</div>
+    </div>
+    <div class="rs-card">
+      <div class="rs-num">{{ result.total }}</div>
+      <div class="rs-label">Total questions</div>
+    </div>
+  </div>
+
+  <!-- Corrigé -->
+  <div class="corrige-title">📋 Corrigé détaillé</div>
+  {% for item in questions_with_answers %}
+    <div class="q-review {% if item.is_correct %}correct{% else %}wrong{% endif %}" style="animation-delay:{{ forloop.counter0 }}0ms">
+      <div class="q-status {% if item.is_correct %}ok{% else %}bad{% endif %}">
+        {% if item.is_correct %}✓ Correcte{% else %}✗ Incorrecte{% endif %}
+      </div>
+      <div class="q-text-review">{{ item.question.question }}</div>
+
+      <div class="choices-review">
+        {% for letter, text in item.question.choice_a|add:"|||"|add:item.question.choice_b %}{% endfor %}
+
+        {% with choices="ABCD" %}
+        {% for letter in "A,B,C,D"|split:"," %}{% endfor %}
+        {% endwith %}
+
+        <!-- A -->
+        <div class="cr-choice
+          {% if item.question.answer == 'A' %}is-correct
+          {% elif item.user_answer == 'A' and item.question.answer != 'A' %}is-wrong
+          {% else %}neutral{% endif %}">
+          <span class="cr-key">A</span> {{ item.question.choice_a }}
+          {% if item.question.answer == 'A' %} ✓{% elif item.user_answer == 'A' %} ✗{% endif %}
+        </div>
+        <!-- B -->
+        <div class="cr-choice
+          {% if item.question.answer == 'B' %}is-correct
+          {% elif item.user_answer == 'B' and item.question.answer != 'B' %}is-wrong
+          {% else %}neutral{% endif %}">
+          <span class="cr-key">B</span> {{ item.question.choice_b }}
+          {% if item.question.answer == 'B' %} ✓{% elif item.user_answer == 'B' %} ✗{% endif %}
+        </div>
+        <!-- C -->
+        <div class="cr-choice
+          {% if item.question.answer == 'C' %}is-correct
+          {% elif item.user_answer == 'C' and item.question.answer != 'C' %}is-wrong
+          {% else %}neutral{% endif %}">
+          <span class="cr-key">C</span> {{ item.question.choice_c }}
+          {% if item.question.answer == 'C' %} ✓{% elif item.user_answer == 'C' %} ✗{% endif %}
+        </div>
+        <!-- D -->
+        <div class="cr-choice
+          {% if item.question.answer == 'D' %}is-correct
+          {% elif item.user_answer == 'D' and item.question.answer != 'D' %}is-wrong
+          {% else %}neutral{% endif %}">
+          <span class="cr-key">D</span> {{ item.question.choice_d }}
+          {% if item.question.answer == 'D' %} ✓{% elif item.user_answer == 'D' %} ✗{% endif %}
+        </div>
+      </div>
+
+      {% if item.question.explanation %}
+        <div class="explanation-box"><strong>💡 Explication :</strong> {{ item.question.explanation }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <!-- Actions -->
+  <div class="result-actions">
+    <a href="{% url 'generate_quiz' result.quiz.document.id %}" class="btn-action btn-retry">🔄 Nouveau quiz</a>
+    <a href="{% url 'course_detail' result.quiz.document.course.id %}" class="btn-action btn-back">← Retour au cours</a>
+    <a href="{% url 'quiz_history' %}" class="btn-action btn-history">📊 Mon historique</a>
+  </div>
+
+</div>
+{% endblock %}

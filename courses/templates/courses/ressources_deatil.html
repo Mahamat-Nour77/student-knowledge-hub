@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto;padding:24px 16px">
+
+  <a href="{% url 'resources_list' %}" style="color:var(--muted);text-decoration:none;font-size:.85rem;display:inline-flex;align-items:center;gap:6px;margin-bottom:20px">
+    ← Retour aux ressources
+  </a>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:20px">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span style="background:rgba(99,179,237,0.1);color:#63b3ed;padding:3px 10px;border-radius:6px;font-size:.78rem">{{ resource.get_type_display }}</span>
+        <span style="background:rgba(167,139,250,0.1);color:#a78bfa;padding:3px 10px;border-radius:6px;font-size:.78rem">{{ resource.get_subject_display }}</span>
+        {% if resource.course %}
+          <span style="background:rgba(52,211,153,0.1);color:#34d399;padding:3px 10px;border-radius:6px;font-size:.78rem">{{ resource.course.name }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Vote -->
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="vote(1)" id="btn-up"
+                style="background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);color:#34d399;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.85rem">👍 Utile</button>
+        <span id="vote-count" style="font-weight:700;font-size:1rem;color:var(--text)">{{ vote_count }}</span>
+        <button onclick="vote(-1)"
+                style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.85rem">👎</button>
+      </div>
+    </div>
+
+    <h1 style="font-size:1.4rem;font-weight:700;margin:0 0 8px">{{ resource.title }}</h1>
+    <p style="font-size:.82rem;color:var(--muted);margin:0 0 20px">
+      Partagé par <strong style="color:var(--text)">{{ resource.author.username }}</strong> · {{ resource.created_at|timesince }}
+    </p>
+
+    {% if resource.type != "flashcard" %}
+      <div style="line-height:1.8;color:var(--text);white-space:pre-wrap;font-size:.95rem">{{ resource.content }}</div>
+    {% else %}
+      <div style="color:var(--muted);font-size:.9rem;margin-bottom:16px">{{ resource.content }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Flashcards interactives -->
+  {% if flashcards %}
+  <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:14px">🃏 {{ flashcards.count }} carte{{ flashcards.count|pluralize }}</h3>
+  <div id="fc-container">
+    {% for card in flashcards %}
+    <div class="flashcard" data-index="{{ forloop.counter0 }}"
+         style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:12px;cursor:pointer;transition:border-color .15s"
+         onclick="toggleCard(this)">
+      <div class="fc-question" style="font-size:1rem;font-weight:600;color:var(--text)">
+        ❓ {{ card.question }}
+      </div>
+      <div class="fc-answer" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);color:#34d399;font-size:.95rem;line-height:1.6">
+        ✅ {{ card.answer }}
+      </div>
+      <div style="margin-top:10px;font-size:.75rem;color:var(--muted)">Clique pour voir la réponse</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+const csrf = document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
+
+function vote(value) {
+  fetch('/ressources/{{ resource.id }}/vote/', {
+    method: 'POST',
+    headers: {'X-CSRFToken': csrf, 'Content-Type': 'application/x-www-form-urlencoded'},
+    body: `value=${value}`
+  })
+  .then(r => r.json())
+  .then(data => { document.getElementById('vote-count').textContent = data.count; });
+}
+
+function toggleCard(el) {
+  const ans = el.querySelector('.fc-answer');
+  const hint = el.querySelector('div:last-child');
+  if (ans.style.display === 'none') {
+    ans.style.display = 'block';
+    hint.textContent = 'Clique pour masquer';
+    el.style.borderColor = 'rgba(52,211,153,0.4)';
+  } else {
+    ans.style.display = 'none';
+    hint.textContent = 'Clique pour voir la réponse';
+    el.style.borderColor = 'var(--border)';
+  }
+}
+</script>
+{% endblock %}

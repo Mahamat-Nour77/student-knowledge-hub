@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  body { background:#030d14 !important; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+  .wrap { max-width:900px; margin:32px auto; }
+
+  /* Hero */
+  .quiz-hero {
+    background:linear-gradient(135deg,rgba(0,119,182,0.2),rgba(0,212,255,0.1));
+    border:1px solid rgba(0,212,255,0.2); border-radius:22px;
+    padding:32px 36px; margin-bottom:28px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+  }
+  .quiz-hero h1 { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; color:#e2f4ff; margin-bottom:4px; }
+  .quiz-hero p  { font-size:.85rem; color:#5b8fa8; margin:0; }
+
+  /* Stats */
+  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:28px; animation:fadeUp .5s .06s both; }
+  .stat-card { background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.12); border-radius:16px; padding:20px; text-align:center; transition:border-color .2s,transform .2s; }
+  .stat-card:hover { border-color:rgba(0,212,255,0.25); transform:translateY(-2px); }
+  .stat-num { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; background:linear-gradient(135deg,#00d4ff,#00f5d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .stat-label { font-size:.73rem; color:#5b8fa8; margin-top:4px; }
+
+  /* Section titre */
+  .sec-head { display:flex; align-items:center; gap:12px; margin:32px 0 18px; }
+  .sec-head h2 { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; color:#e2f4ff; margin:0; }
+  .sec-head::after { content:''; flex:1; height:1px; background:rgba(0,212,255,0.1); }
+
+  /* Générer quiz — grille de cours */
+  .courses-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:32px; animation:fadeUp .5s .1s both; }
+  .course-gen-card {
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+    border-radius:16px; overflow:hidden;
+    transition:border-color .2s, transform .2s, box-shadow .2s;
+    cursor:pointer;
+  }
+  .course-gen-card:hover { border-color:rgba(0,212,255,0.3); transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,212,255,0.08); }
+  .course-img { width:100%; height:90px; object-fit:cover; }
+  .course-img-placeholder { width:100%; height:90px; background:linear-gradient(135deg,rgba(0,119,182,0.3),rgba(0,212,255,0.15)); display:flex; align-items:center; justify-content:center; font-size:2rem; }
+  .course-gen-body { padding:14px; }
+  .course-gen-name { font-size:.85rem; font-weight:700; color:#e2f4ff; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .course-gen-sem  { font-size:.72rem; color:#5b8fa8; margin-bottom:10px; }
+  .doc-list { display:flex; flex-direction:column; gap:6px; max-height:120px; overflow-y:auto; }
+  .doc-item {
+    display:flex; align-items:center; gap:8px;
+    padding:7px 10px; border-radius:8px;
+    background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.12);
+    text-decoration:none; transition:background .15s;
+  }
+  .doc-item:hover { background:rgba(0,212,255,0.14); }
+  .doc-item-name { font-size:.75rem; color:#93c5fd; font-weight:500; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .doc-item-btn { font-size:.68rem; font-weight:700; color:#00d4ff; white-space:nowrap; }
+  .no-docs { font-size:.75rem; color:#374151; text-align:center; padding:12px 0; }
+
+  /* Historique */
+  .result-list { display:flex; flex-direction:column; gap:10px; animation:fadeUp .5s .12s both; }
+  .result-item {
+    background:rgba(11,15,26,0.85); border:1px solid rgba(255,255,255,0.07);
+    border-radius:16px; padding:18px 22px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    transition:border-color .2s, transform .15s;
+  }
+  .result-item:hover { border-color:rgba(0,212,255,0.2); transform:translateX(3px); }
+  .ri-left { display:flex; align-items:center; gap:12px; }
+  .ri-badge {
+    width:50px; height:50px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Syne',sans-serif; font-size:.95rem; font-weight:800;
+  }
+  .ri-badge.great  { background:rgba(52,211,153,0.12); color:#34d399; border:1px solid rgba(52,211,153,0.2); }
+  .ri-badge.medium { background:rgba(251,191,36,0.12);  color:#fbbf24; border:1px solid rgba(251,191,36,0.2); }
+  .ri-badge.poor   { background:rgba(248,113,113,0.12); color:#f87171; border:1px solid rgba(248,113,113,0.2); }
+  .ri-doc  { font-size:.88rem; font-weight:600; color:#e2f4ff; margin-bottom:2px; }
+  .ri-info { font-size:.73rem; color:#5b8fa8; }
+  .ri-right { display:flex; gap:8px; }
+  .btn-sm-cyan   { padding:7px 14px; background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.25); border-radius:8px; color:#00d4ff; font-size:.78rem; font-weight:600; text-decoration:none; transition:background .15s; }
+  .btn-sm-cyan:hover { background:rgba(0,212,255,0.2); color:#00d4ff; }
+  .btn-sm-ghost  { padding:7px 14px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:8px; color:#5b8fa8; font-size:.78rem; font-weight:600; text-decoration:none; transition:background .15s; }
+  .btn-sm-ghost:hover { background:rgba(255,255,255,0.08); color:#e2f4ff; }
+
+  /* Empty */
+  .empty-box { text-align:center; padding:48px 20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; }
+  .empty-box .ico { font-size:2.5rem; margin-bottom:12px; }
+  .empty-box h3 { color:#e2f4ff; font-weight:600; margin-bottom:6px; }
+  .empty-box p  { color:#5b8fa8; font-size:.84rem; }
+
+  @media(max-width:700px) { .courses-grid { grid-template-columns:1fr; } .stats-row { grid-template-columns:1fr; } }
+</style>
+
+<div class="wrap">
+
+  <!-- Hero -->
+  <div class="quiz-hero">
+    <div>
+      <h1>🧠 Quiz IA</h1>
+      <p>Génère des QCM depuis tes documents PDF et suis ta progression.</p>
+    </div>
+    <a href="{% url 'course_list' %}" style="padding:10px 22px;background:linear-gradient(135deg,#0077b6,#00d4ff);border-radius:10px;color:#fff;font-weight:600;font-size:.88rem;text-decoration:none;white-space:nowrap;">
+      + Ajouter un cours
+    </a>
+  </div>
+
+  <!-- Stats -->
+  {% if results %}
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-num">{{ results|length }}</div>
+      <div class="stat-label">Quiz complétés</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ best_score }}%</div>
+      <div class="stat-label">Meilleur score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{{ results.0.completed_at|date:"d/m" }}</div>
+      <div class="stat-label">Dernier quiz</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Générer un quiz -->
+  <div class="sec-head"><h2>✨ Générer un quiz depuis un cours</h2></div>
+
+  {% if courses_with_docs %}
+    <div class="courses-grid">
+      {% for item in courses_with_docs %}
+      <div class="course-gen-card">
+        {% if item.course.image %}
+          <img src="{{ item.course.image.url }}" class="course-img" alt="{{ item.course.name }}">
+        {% else %}
+          <div class="course-img-placeholder">📚</div>
+        {% endif %}
+        <div class="course-gen-body">
+          <div class="course-gen-name">{{ item.course.name }}</div>
+          <div class="course-gen-sem">{{ item.course.semester }}</div>
+          {% if item.documents %}
+            <div class="doc-list">
+              {% for doc in item.documents %}
+                <a href="{% url 'generate_quiz' doc.id %}" class="doc-item">
+                  <span style="font-size:.85rem">📄</span>
+                  <span class="doc-item-name">{{ doc.title }}</span>
+                  <span class="doc-item-btn">Quiz →</span>
+                </a>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="no-docs" style="text-align:center;padding:14px 0">
+              <div style="font-size:1.2rem;margin-bottom:6px">📂</div>
+              <div style="font-size:.75rem;color:#5b8fa8;margin-bottom:8px">Aucun document encore</div>
+              <a href="{% url 'upload_document' item.course.id %}"
+                 style="display:inline-block;padding:7px 16px;background:linear-gradient(135deg,#0077b6,#00d4ff);border-radius:8px;color:#fff;font-size:.78rem;font-weight:700;text-decoration:none;">
+                📤 Uploader &amp; Générer Quiz →
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-box" style="margin-bottom:28px">
+      <div class="ico">📚</div>
+      <h3>Aucun cours disponible</h3>
+      <p>Ajoute un cours et uploade un PDF pour générer ton premier quiz !</p>
+      <a href="{% url 'add_course' %}" style="display:inline-block;margin-top:14px;padding:10px 22px;background:linear-gradient(135deg,#0077b6,#00d4ff);border-radius:10px;color:#fff;font-weight:600;text-decoration:none;">
+        + Ajouter un cours
+      </a>
+    </div>
+  {% endif %}
+
+  <!-- Historique -->
+  <div class="sec-head"><h2>📊 Historique des résultats</h2></div>
+
+  {% if results %}
+    <div class="result-list">
+      {% for result in results %}
+        <div class="result-item">
+          <div class="ri-left">
+            <div class="ri-badge {% if result.percentage >= 80 %}great{% elif result.percentage >= 50 %}medium{% else %}poor{% endif %}">
+              {{ result.percentage }}%
+            </div>
+            <div>
+              <div class="ri-doc">{{ result.quiz.document.title }}</div>
+              <div class="ri-info">📚 {{ result.quiz.document.course.name }} · {{ result.score }}/{{ result.total }} · {{ result.completed_at|date:"d M Y" }}</div>
+            </div>
+          </div>
+          <div class="ri-right">
+            <a href="{% url 'quiz_result' result.id %}" class="btn-sm-cyan">Voir corrigé</a>
+            <a href="{% url 'generate_quiz' result.quiz.document.id %}" class="btn-sm-ghost">🔄 Retry</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-box">
+      <div class="ico">🎯</div>
+      <h3>Aucun quiz passé encore</h3>
+      <p>Clique sur "Quiz →" à côté d'un document pour générer ton premier QCM IA !</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

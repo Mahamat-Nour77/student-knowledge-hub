@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .res-wrap{max-width:720px;margin:0 auto;}
+  .score-hero{background:linear-gradient(135deg,#1e2a4a,#1a2035);border:1px solid rgba(79,142,247,0.2);border-radius:20px;padding:36px;text-align:center;margin-bottom:28px;animation:fadeUp .5s both;}
+  .score-num{font-family:'Syne',sans-serif;font-size:3.5rem;font-weight:800;margin-bottom:4px;}
+  .score-label{font-size:.9rem;color:rgba(240,242,255,0.6);}
+  .score-pct{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;margin-top:8px;}
+  .q-res-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px;}
+  .q-res-card.correct{border-color:rgba(52,211,153,0.3);}
+  .q-res-card.wrong{border-color:rgba(248,113,113,0.3);}
+  .q-status{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+  .q-status.ok{color:var(--green);}
+  .q-status.ko{color:var(--red);}
+  .q-question{font-weight:600;color:var(--text);margin-bottom:10px;}
+  .q-detail{font-size:.82rem;color:var(--muted);margin-top:8px;padding:10px 14px;background:rgba(79,142,247,0.05);border-radius:8px;border-left:2px solid var(--electric);}
+  .btn-back{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:linear-gradient(135deg,#4f8ef7,#60a5fa);border:none;border-radius:99px;color:#fff;font-weight:700;font-size:.88rem;text-decoration:none;margin-top:8px;}
+</style>
+<div class="res-wrap">
+  {% with pct=result.score|floatformat:0 %}
+  <div class="score-hero">
+    <div class="score-num" style="color:{% if result.score >= result.total|divisibleby:2 %}#34d399{% else %}#f87171{% endif %}">
+      {{ result.score }}/{{ result.total }}
+    </div>
+    <div class="score-label">{{ result.title }}</div>
+    <div class="score-pct">
+      {% widthratio result.score result.total 100 %}% de réussite
+    </div>
+  </div>
+  {% endwith %}
+
+  {% for r in result.results %}
+  <div class="q-res-card {% if r.is_correct %}correct{% else %}wrong{% endif %}">
+    <div class="q-status {% if r.is_correct %}ok{% else %}ko{% endif %}">
+      {% if r.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+    </div>
+    <div class="q-question">{{ r.question }}</div>
+    <div style="font-size:.82rem;color:var(--muted)">
+      Ta réponse : <strong style="color:{% if r.is_correct %}var(--green){% else %}var(--red){% endif %}">{{ r.user_answer }}</strong>
+      {% if not r.is_correct %} — Bonne réponse : <strong style="color:var(--green)">{{ r.correct_answer }}</strong>{% endif %}
+    </div>
+    {% if r.explanation %}
+    <div class="q-detail">💡 {{ r.explanation }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <a href="{% url 'my_documents' %}" class="btn-back">← Retour à ma bibliothèque</a>
+</div>
+{% endblock %}

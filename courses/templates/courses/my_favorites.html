@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .fav-hero { display:flex; align-items:center; gap:16px; margin-bottom:28px; animation:fadeUp .5s both; }
+  .fav-hero h1 { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:700; color:var(--text); margin:0; }
+
+  .stats-row { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-bottom:28px; animation:fadeUp .5s .05s both; max-width:500px; }
+  .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 24px; text-align:center; ; }
+  .stat-num   { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:700; color:var(--text); }
+  .stat-label { font-size:.75rem; color:var(--muted); margin-top:3px; }
+
+  .sort-bar { display:flex; gap:8px; margin-bottom:24px; animation:fadeUp .5s .08s both; }
+  .sort-btn { padding:8px 18px; border-radius:99px; font-size:.83rem; font-weight:500; text-decoration:none; border:1px solid var(--border); background:var(--surface); color:var(--muted); transition:all .15s; }
+  .sort-btn:hover { border-color:rgba(79,142,247,0.4); color:var(--electric); }
+  .sort-btn.active { background:linear-gradient(135deg,#4f8ef7,#60a5fa); border-color:transparent; color:#fff; box-shadow:0 2px 8px rgba(193,68,14,0.25); }
+
+  .favs-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; animation:fadeUp .5s .1s both; }
+  .fav-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; ; transition:all .2s; }
+  .fav-card:hover { transform:translateY(-4px); box-shadow:0 12px 36px rgba(0,0,0,0.5); border-color:rgba(79,142,247,0.25); }
+  .fav-img { width:100%; height:160px; object-fit:cover; }
+  .fav-body { padding:18px 20px; }
+  .fav-title  { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:600; color:var(--text); margin-bottom:4px; }
+  .fav-course { font-size:.78rem; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:5px; }
+  .fav-date   { font-size:.72rem; color:var(--muted2); margin-bottom:14px; }
+  .fav-actions { display:flex; gap:8px; }
+  .btn-dl { padding:8px 16px; background:linear-gradient(135deg,#4f8ef7,#60a5fa); border:none; border-radius:99px; color:#fff; font-size:.8rem; font-weight:600; text-decoration:none; transition:all .15s; box-shadow:0 2px 6px rgba(193,68,14,0.25); }
+  .btn-dl:hover { box-shadow:0 4px 12px rgba(193,68,14,0.35); color:#fff; }
+  .btn-view { padding:8px 16px; background:var(--surface); border:1px solid var(--border2); border-radius:99px; color:var(--muted); font-size:.8rem; font-weight:500; text-decoration:none; transition:all .15s; }
+  .btn-view:hover { border-color:rgba(79,142,247,0.4); color:var(--electric); }
+
+  .empty-state { text-align:center; padding:60px 20px; background:var(--surface); border:1.5px dashed rgba(79,142,247,0.15); border-radius:18px; }
+  .empty-state h3 { font-family:'Syne',sans-serif; color:var(--text); font-weight:600; margin:12px 0 6px; }
+  .empty-state p  { color:var(--muted); font-size:.85rem; }
+
+  @media(max-width:768px) { .favs-grid { grid-template-columns:1fr; } .stats-row { grid-template-columns:1fr; } }
+</style>
+
+<div class="fav-hero">
+  <div>
+    <h1>❤️ Mes favoris</h1>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:4px">Tes documents et ressources sauvegardés</p>
+  </div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num">{{ total_favorites }}</div>
+    <div class="stat-label">Documents favoris</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_courses }}</div>
+    <div class="stat-label">Cours différents</div>
+  </div>
+</div>
+
+<div class="sort-bar">
+  <a href="?sort=recent" class="sort-btn {% if not request.GET.sort or request.GET.sort == 'recent' %}active{% endif %}">📅 Récent</a>
+  <a href="?sort=rating" class="sort-btn {% if request.GET.sort == 'rating' %}active{% endif %}">⭐ Mieux notés</a>
+</div>
+
+{% if favorites %}
+  <div class="favs-grid">
+    {% for fav in favorites %}
+    <div class="fav-card">
+      {% if fav.document.course.image %}
+        <img src="{{ fav.document.course.image.url }}" class="fav-img" alt="{{ fav.document.title }}">
+      {% else %}
+        <img src="https://picsum.photos/400/200?random={{ forloop.counter }}" class="fav-img" alt="{{ fav.document.title }}">
+      {% endif %}
+      <div class="fav-body">
+        <div class="fav-title">{{ fav.document.title }}</div>
+        <div class="fav-course">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
+          {{ fav.document.course.name }}
+        </div>
+        <div class="fav-date">Ajouté le {{ fav.document.upload_date|date:"d M Y" }}</div>
+        <div class="fav-actions">
+          <a href="{{ fav.document.file.url }}" class="btn-dl" download>📥 Télécharger</a>
+          <a href="{% url 'course_detail' fav.document.course.id %}" class="btn-view">Voir →</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div style="font-size:2.5rem">💛</div>
+    <h3>Aucun favori pour l'instant</h3>
+    <p>Parcours les cours et clique sur ❤️ pour sauvegarder tes documents préférés.</p>
+    <a href="{% url 'course_list' %}" style="display:inline-block;margin-top:14px;padding:10px 22px;background:linear-gradient(135deg,#4f8ef7,#60a5fa);border-radius:99px;color:#fff;font-weight:700;text-decoration:none;">Voir les cours →</a>
+  </div>
+{% endif %}
+
+{% endblock %}

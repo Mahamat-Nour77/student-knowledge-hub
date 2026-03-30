@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+  body { background:#030d14 !important; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .detail-wrap { max-width:960px; margin:0 auto; }
+
+  /* ── Hero cours ── */
+  .course-hero {
+    background:linear-gradient(135deg,rgba(0,119,182,0.2),rgba(0,212,255,0.1));
+    border:1px solid rgba(0,212,255,0.18); border-radius:22px;
+    padding:32px 36px; margin-bottom:28px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;
+  }
+  .course-hero h1 { font-family:'Syne',sans-serif; font-size:1.7rem; font-weight:800; color:#e2f4ff; margin-bottom:6px; }
+  .course-meta { display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
+  .meta-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:99px; font-size:.75rem; font-weight:600; }
+  .meta-badge.prof { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.2); color:#00d4ff; }
+  .meta-badge.sem  { background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.2); color:#a78bfa; }
+  .hero-actions { display:flex; gap:10px; flex-wrap:wrap; }
+  .btn-hero-primary {
+    padding:10px 20px; background:linear-gradient(135deg,#0077b6,#00d4ff);
+    border:none; border-radius:10px; color:#fff; font-weight:600; font-size:.88rem;
+    text-decoration:none; transition:transform .15s,box-shadow .2s; white-space:nowrap;
+  }
+  .btn-hero-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,212,255,0.35); color:#fff; }
+  .btn-hero-ghost {
+    padding:10px 20px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; color:#9ca3af; font-weight:500; font-size:.88rem;
+    text-decoration:none; transition:background .15s; white-space:nowrap;
+  }
+  .btn-hero-ghost:hover { background:rgba(255,255,255,0.1); color:#e2f4ff; }
+
+  /* ── Section titre ── */
+  .sec-head { display:flex; align-items:center; justify-content:space-between; margin:0 0 18px; }
+  .sec-head h2 { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; color:#e2f4ff; display:flex; align-items:center; gap:8px; }
+  .sec-count { font-size:.72rem; color:#5b8fa8; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:99px; padding:2px 10px; }
+
+  /* ── Document cards ── */
+  .docs-grid { display:flex; flex-direction:column; gap:14px; margin-bottom:36px; animation:fadeUp .5s .08s both; }
+  .doc-card {
+    background:rgba(11,15,26,0.85); border:1px solid rgba(255,255,255,0.07);
+    border-radius:18px; overflow:hidden;
+    transition:border-color .2s;
+  }
+  .doc-card:hover { border-color:rgba(0,212,255,0.2); }
+
+  .doc-header {
+    padding:20px 24px 16px;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .doc-icon { font-size:1.6rem; flex-shrink:0; margin-top:2px; }
+  .doc-title { font-size:.95rem; font-weight:700; color:#e2f4ff; margin-bottom:4px; }
+  .doc-author { font-size:.72rem; color:#5b8fa8; }
+  .doc-badges { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .rating-badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:4px 10px; border-radius:99px; font-size:.75rem; font-weight:600;
+  }
+  .rating-badge.has-rating { background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.25); color:#fbbf24; }
+  .rating-badge.no-rating  { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); color:#5b8fa8; }
+  .comments-badge { display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:99px; font-size:.75rem; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.15); color:#00d4ff; }
+
+  /* Actions doc */
+  .doc-actions {
+    padding:14px 24px;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  }
+  .btn-action {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 16px; border-radius:9px; font-size:.8rem; font-weight:600;
+    text-decoration:none; border:none; cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .btn-dl     { background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.25); color:#00d4ff; }
+  .btn-dl:hover { background:rgba(0,212,255,0.2); color:#00d4ff; }
+  .btn-quiz   { background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(0,180,216,0.15)); border:1px solid rgba(124,58,237,0.35); color:#a78bfa; }
+  .btn-quiz:hover { border-color:rgba(124,58,237,0.55); box-shadow:0 4px 14px rgba(124,58,237,0.2); color:#a78bfa; }
+  .btn-fav    { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2); color:#f87171; }
+  .btn-fav:hover { background:rgba(248,113,113,0.18); color:#f87171; }
+  .btn-fav.active { background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.4); }
+  .btn-del    { background:rgba(248,113,113,0.06); border:1px solid rgba(248,113,113,0.15); color:#f87171; }
+  .btn-del:hover { background:rgba(248,113,113,0.14); }
+
+  /* Rating form */
+  .doc-rate { padding:0 24px 14px; display:flex; align-items:center; gap:8px; }
+  .stars-wrap { display:flex; gap:4px; }
+  .star-btn {
+    width:30px; height:30px; border-radius:7px; border:1px solid rgba(255,255,255,0.09);
+    background:rgba(255,255,255,0.04); font-size:.9rem; cursor:pointer;
+    transition:background .15s, border-color .15s; display:flex; align-items:center; justify-content:center;
+  }
+  .star-btn:hover { background:rgba(251,191,36,0.15); border-color:rgba(251,191,36,0.3); }
+  .star-btn.sel { background:rgba(251,191,36,0.2); border-color:rgba(251,191,36,0.4); }
+  .btn-rate { padding:7px 14px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.25); border-radius:8px; color:#fbbf24; font-size:.78rem; font-weight:600; cursor:pointer; }
+  .btn-rate:hover { background:rgba(251,191,36,0.22); }
+
+  /* Discussion */
+  .doc-discussion { padding:0 24px 16px; }
+  .disc-toggle {
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+    color:#5b8fa8; font-size:.8rem; font-weight:500; margin-bottom:10px;
+    background:none; border:none; padding:0;
+    transition:color .15s;
+  }
+  .disc-toggle:hover { color:#e2f4ff; }
+  .disc-body { display:none; }
+  .disc-body.open { display:block; animation:fadeUp .3s both; }
+  .msg-item { display:flex; gap:8px; margin-bottom:10px; }
+  .msg-avatar { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg,#0077b6,#00d4ff); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+  .msg-bubble { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:8px 12px; flex:1; }
+  .msg-user { font-size:.72rem; font-weight:600; color:#00d4ff; margin-bottom:2px; }
+  .msg-text { font-size:.82rem; color:#9ca3af; }
+  .msg-input {
+    width:100%; background:rgba(255,255,255,0.05) !important; border:1px solid rgba(255,255,255,0.09) !important;
+    border-radius:10px !important; padding:10px 14px !important; font-size:.85rem !important; color:#e2f4ff !important;
+    outline:none !important; font-family:'DM Sans',sans-serif; margin-bottom:8px;
+  }
+  .msg-input:focus { border-color:rgba(0,212,255,0.4) !important; }
+  .btn-send { padding:8px 16px; background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.25); border-radius:8px; color:#00d4ff; font-size:.8rem; font-weight:600; cursor:pointer; }
+  .btn-send:hover { background:rgba(0,212,255,0.2); }
+
+  /* ── Commentaires ── */
+  .comments-section { animation:fadeUp .5s .12s both; }
+  .comment-card {
+    background:rgba(11,15,26,0.85); border:1px solid rgba(255,255,255,0.07);
+    border-radius:14px; padding:16px 20px; margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+  }
+  .cm-avatar { width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#0077b6,#00d4ff); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; flex-shrink:0; }
+  .cm-user { font-size:.82rem; font-weight:600; color:#e2f4ff; margin-bottom:2px; }
+  .cm-text { font-size:.85rem; color:#9ca3af; line-height:1.5; }
+  .cm-date { font-size:.7rem; color:#374151; margin-top:4px; }
+  .btn-cm-del { padding:6px 12px; background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2); border-radius:7px; color:#f87171; font-size:.75rem; cursor:pointer; }
+  .btn-cm-del:hover { background:rgba(248,113,113,0.15); }
+
+  /* Ajouter commentaire */
+  .comment-form-card {
+    background:rgba(11,15,26,0.8); border:1px solid rgba(255,255,255,0.07);
+    border-radius:16px; padding:22px; margin-top:16px;
+  }
+  .cf-title { font-size:.85rem; font-weight:600; color:#e2f4ff; margin-bottom:12px; }
+  .cf-input {
+    width:100%; background:rgba(255,255,255,0.05) !important; border:1px solid rgba(255,255,255,0.09) !important;
+    border-radius:12px !important; padding:12px 16px !important; font-size:.88rem !important; color:#e2f4ff !important;
+    outline:none !important; resize:vertical; min-height:80px; font-family:'DM Sans',sans-serif;
+  }
+  .cf-input:focus { border-color:rgba(0,212,255,0.4) !important; }
+  .btn-cf { margin-top:10px; padding:10px 22px; background:linear-gradient(135deg,#0077b6,#00d4ff); border:none; border-radius:10px; color:#fff; font-weight:600; font-size:.88rem; cursor:pointer; }
+
+  /* Empty */
+  .empty-docs { text-align:center; padding:48px; background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.08); border-radius:18px; }
+  .empty-docs p { color:#5b8fa8; font-size:.88rem; margin-top:10px; }
+
+  @media(max-width:600px) { .doc-header { flex-direction:column; } .doc-actions { gap:6px; } .course-hero { flex-direction:column; } }
+</style>
+
+<div class="detail-wrap">
+
+  <!-- Hero -->
+  <div class="course-hero">
+    <div>
+      <h1>{{ course.name }}</h1>
+      <div class="course-meta">
+        {% if course.professor %}<span class="meta-badge prof">👨‍🏫 {{ course.professor }}</span>{% endif %}
+        {% if course.semester %}<span class="meta-badge sem">📅 {{ course.semester }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="hero-actions">
+      <a href="{% url 'upload_document' course.id %}" class="btn-hero-primary">📤 Ajouter un document</a>
+      <a href="{% url 'course_list' %}" class="btn-hero-ghost">← Retour</a>
+    </div>
+  </div>
+
+  <!-- Documents -->
+  <div class="sec-head">
+    <h2>📄 Documents <span class="sec-count">{{ documents|length }}</span></h2>
+  </div>
+
+  {% if documents %}
+  <div class="docs-grid">
+    {% for document in documents %}
+    <div class="doc-card">
+
+      <!-- Header -->
+      <div class="doc-header">
+        <div style="display:flex;gap:14px;align-items:flex-start;flex:1">
+          <div class="doc-icon">📄</div>
+          <div style="flex:1">
+            <div class="doc-title">{{ document.title }}</div>
+            <div class="doc-author">Ajouté par {{ document.uploaded_by.username }}</div>
+            {% if document.description %}
+              <div style="font-size:.78rem;color:#5b8fa8;margin-top:4px">{{ document.description|truncatechars:100 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="doc-badges">
+          {% if document.avg_rating %}
+            <span class="rating-badge has-rating">⭐ {{ document.avg_rating|floatformat:1 }}</span>
+          {% else %}
+            <span class="rating-badge no-rating">Non noté</span>
+          {% endif %}
+          <span class="comments-badge">💬 {{ document.comment_set.count }}</span>
+        </div>
+      </div>
+
+      <!-- Actions principales -->
+      <div class="doc-actions">
+        <a href="{{ document.file.url }}" class="btn-action btn-dl" download>
+          📥 Télécharger
+        </a>
+        <a href="{% url 'generate_quiz' document.id %}" class="btn-action btn-quiz">
+          🧠 Générer Quiz IA
+        </a>
+        {% if user.is_authenticated %}
+        <button class="btn-action btn-fav favorite-btn" data-id="{{ document.id }}">
+          🤍 Favori
+        </button>
+        {% endif %}
+        {% if document.uploaded_by == user %}
+        <form method="post" action="{% url 'delete_document' document.id %}" style="display:inline">
+          {% csrf_token %}
+          <button type="submit" class="btn-action btn-del" onclick="return confirm('Supprimer ce document ?')">
+            🗑 Supprimer
+          </button>
+        </form>
+        {% endif %}
+      </div>
+
+      <!-- Noter -->
+      {% if user.is_authenticated %}
+      <div class="doc-rate">
+        <form method="post" action="{% url 'rate_document' document.id %}" style="display:flex;align-items:center;gap:8px">
+          {% csrf_token %}
+          <div class="stars-wrap">
+            {% for i in "12345" %}
+            <button type="button" class="star-btn" onclick="selectStar(this, {{ forloop.counter }}, '{{ document.id }}')">⭐</button>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="score_{{ document.id }}" id="score_{{ document.id }}" value="">
+          <button type="submit" class="btn-rate">Noter</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- Discussion -->
+      <div class="doc-discussion">
+        <button class="disc-toggle" onclick="toggleDisc(this)">
+          💬 Discussion ({{ document.message_set.count }}) <span style="font-size:.7rem">▼</span>
+        </button>
+        <div class="disc-body">
+          {% for msg in document.message_set.all %}
+          <div class="msg-item">
+            <div class="msg-avatar">{{ msg.user.username|first|upper }}</div>
+            <div class="msg-bubble">
+              <div class="msg-user">{{ msg.user.username }}</div>
+              <div class="msg-text">{{ msg.content }}</div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="font-size:.8rem;color:#374151;margin-bottom:10px">Aucun message encore — sois le premier !</div>
+          {% endfor %}
+          {% if user.is_authenticated %}
+          <form method="post" action="{% url 'add_message' document.id %}">
+            {% csrf_token %}
+            <input type="text" name="content" class="msg-input" placeholder="Écrire un message...">
+            <button type="submit" class="btn-send">Envoyer →</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-docs">
+    <div style="font-size:2.5rem">📂</div>
+    <p>Aucun document dans ce cours encore.<br>Sois le premier à partager !</p>
+    <a href="{% url 'upload_document' course.id %}" class="btn-hero-primary" style="display:inline-block;margin-top:14px">📤 Ajouter un document</a>
+  </div>
+  {% endif %}
+
+  <!-- Commentaires du cours -->
+  <div class="comments-section">
+    <div class="sec-head">
+      <h2>💬 Commentaires <span class="sec-count">{{ comments|length }}</span></h2>
+    </div>
+
+    {% for comment in comments %}
+    <div class="comment-card">
+      <div style="display:flex;gap:12px;flex:1">
+        <div class="cm-avatar">{{ comment.user.username|first|upper }}</div>
+        <div>
+          <div class="cm-user">{{ comment.user.username }}</div>
+          <div class="cm-text">{{ comment.content }}</div>
+          <div class="cm-date">{{ comment.created_at|date:"d M Y à H:i" }}</div>
+        </div>
+      </div>
+      {% if comment.user == user %}
+      <form method="post" action="{% url 'delete_comment' comment.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn-cm-del" onclick="return confirm('Supprimer ?')">🗑</button>
+      </form>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div style="text-align:center;padding:32px;color:#374151;font-size:.85rem;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.07);border-radius:14px;margin-bottom:16px">
+      Aucun commentaire — lance la discussion !
+    </div>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+    <div class="comment-form-card">
+      <div class="cf-title">✏️ Ajouter un commentaire</div>
+      <form method="post">
+        {% csrf_token %}
+        <textarea name="content" class="cf-input" placeholder="Partage ton avis sur ce cours..."></textarea>
+        <button type="submit" class="btn-cf">Publier →</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+// Discussion toggle
+function toggleDisc(btn) {
+  const body = btn.nextElementSibling;
+  body.classList.toggle('open');
+  const arrow = btn.querySelector('span');
+  arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
+}
+
+// Étoiles
+function selectStar(el, val, docId) {
+  const wrap = el.closest('.stars-wrap');
+  wrap.querySelectorAll('.star-btn').forEach((b,i) => {
+    b.classList.toggle('sel', i < val);
+  });
+  document.getElementById('score_' + docId).value = val;
+}
+
+// Favoris
+document.querySelectorAll('.favorite-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const docId = this.dataset.id;
+    fetch(`/document/${docId}/favorite/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCSRFToken() }
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'added') {
+        this.innerHTML = '❤️ Favori';
+        this.classList.add('active');
+      } else {
+        this.innerHTML = '🤍 Favori';
+        this.classList.remove('active');
+      }
+    });
+  });
+});
+</script>
+
+{% endblock %}

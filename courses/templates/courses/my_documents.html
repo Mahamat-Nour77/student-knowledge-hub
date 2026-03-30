@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Hero */
+  .hero{background:linear-gradient(135deg,#1e2a4a,#1a2035);border:1px solid rgba(79,142,247,0.2);border-radius:20px;padding:32px 36px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;animation:fadeUp .5s both;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(79,142,247,0.06);}
+  .hero h1{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:#f0f2ff;margin-bottom:4px;}
+  .hero p{color:rgba(240,242,255,0.55);font-size:.85rem;margin:0;}
+  .btn-upload-trigger{display:flex;align-items:center;gap:8px;padding:10px 22px;background:linear-gradient(135deg,#4f8ef7,#60a5fa);border:none;border-radius:99px;color:#fff;font-weight:700;font-size:.88rem;cursor:pointer;transition:all .2s;box-shadow:0 2px 10px rgba(79,142,247,0.4);}
+  .btn-upload-trigger:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(79,142,247,0.5);}
+
+  /* Stats */
+  .stats-bar{display:flex;gap:12px;margin-bottom:24px;animation:fadeUp .5s .05s both;flex-wrap:wrap;}
+  .stat-chip{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:10px;}
+  .stat-num{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--electric);}
+  .stat-label{font-size:.75rem;color:var(--muted);}
+
+  /* Upload modal */
+  .upload-modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;}
+  .upload-modal.open{display:flex;}
+  .upload-box{background:var(--bg2);border:1px solid rgba(79,142,247,0.2);border-radius:22px;padding:36px;width:100%;max-width:520px;animation:fadeUp .4s both;box-shadow:0 40px 80px rgba(0,0,0,0.6);}
+  .upload-box h2{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:20px;}
+  .up-field{margin-bottom:14px;}
+  .up-field label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .up-input{width:100%;background:rgba(255,255,255,0.05)!important;border:1px solid rgba(255,255,255,0.1)!important;border-radius:10px!important;padding:11px 14px!important;font-size:.88rem!important;color:var(--text)!important;outline:none!important;font-family:'Inter',sans-serif;}
+  .up-input:focus{border-color:rgba(79,142,247,0.5)!important;}
+  .up-input::placeholder{color:var(--muted2)!important;}
+  .file-drop{border:2px dashed rgba(79,142,247,0.25);border-radius:12px;padding:28px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:rgba(79,142,247,0.03);}
+  .file-drop:hover{border-color:rgba(79,142,247,0.5);background:rgba(79,142,247,0.06);}
+  .file-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .file-drop-text{font-size:.85rem;color:var(--muted);}
+  .file-drop-text strong{color:var(--electric);}
+  .btn-submit-upload{width:100%;padding:12px;background:linear-gradient(135deg,#4f8ef7,#60a5fa);border:none;border-radius:10px;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;margin-top:10px;transition:all .2s;}
+  .btn-submit-upload:hover{box-shadow:0 6px 20px rgba(79,142,247,0.5);}
+  .btn-modal-close{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:99px;color:var(--muted);padding:8px 16px;font-size:.82rem;cursor:pointer;float:right;margin-bottom:12px;}
+
+  /* Filtres */
+  .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;animation:fadeUp .5s .07s both;}
+  .filter-btn{padding:7px 16px;border-radius:99px;font-size:.82rem;font-weight:500;text-decoration:none;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .15s;}
+  .filter-btn:hover{border-color:rgba(79,142,247,0.4);color:var(--electric);}
+  .filter-btn.active{background:linear-gradient(135deg,#4f8ef7,#60a5fa);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(79,142,247,0.35);}
+
+  /* Fichiers grid */
+  .files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;animation:fadeUp .5s .1s both;}
+  .file-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;transition:all .2s;}
+  .file-card:hover{border-color:rgba(79,142,247,0.3);box-shadow:0 8px 28px rgba(0,0,0,0.4);}
+
+  .file-card-header{padding:18px 20px 14px;display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid var(--border);}
+  .file-ext-badge{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;letter-spacing:.05em;flex-shrink:0;}
+  .ext-pdf{background:rgba(248,113,113,0.15);color:#f87171;}
+  .ext-word{background:rgba(79,142,247,0.15);color:var(--electric);}
+  .ext-other{background:rgba(251,191,36,0.15);color:var(--yellow);}
+  .file-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+  .file-cat{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;background:rgba(79,142,247,0.1);color:var(--electric);font-size:.68rem;font-weight:600;margin-bottom:3px;}
+  .file-desc{font-size:.75rem;color:var(--muted);line-height:1.5;}
+  .file-date{font-size:.7rem;color:var(--muted2);margin-top:4px;}
+
+  /* Actions */
+  .file-actions{padding:12px 16px;display:flex;gap:6px;flex-wrap:wrap;}
+  .btn-action{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:.75rem;font-weight:600;border:none;cursor:pointer;transition:all .15s;text-decoration:none;white-space:nowrap;}
+  .btn-quiz{background:linear-gradient(135deg,rgba(79,142,247,0.2),rgba(96,165,250,0.15));border:1px solid rgba(79,142,247,0.3);color:var(--electric);}
+  .btn-quiz:hover{background:rgba(79,142,247,0.3);color:var(--electric);}
+  .btn-flash{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);color:#fbbf24;}
+  .btn-flash:hover{background:rgba(251,191,36,0.2);}
+  .btn-resume{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);color:#34d399;}
+  .btn-resume:hover{background:rgba(52,211,153,0.2);}
+  .btn-chat{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.25);color:#a78bfa;}
+  .btn-chat:hover{background:rgba(167,139,250,0.2);}
+  .btn-dl{background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--muted);}
+  .btn-dl:hover{color:var(--text);border-color:var(--border2);}
+  .btn-del{background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.15);color:#f87171;}
+  .btn-del:hover{background:rgba(248,113,113,0.15);}
+
+  /* Quiz modal */
+  .quiz-modal{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;}
+  .quiz-modal.open{display:flex;}
+  .quiz-box{background:var(--bg2);border:1px solid rgba(79,142,247,0.2);border-radius:22px;padding:36px;width:100%;max-width:480px;animation:fadeUp .4s both;}
+  .quiz-box h2{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:6px;}
+  .nq-btns{display:flex;gap:8px;margin:14px 0;}
+  .nq-btn{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s;}
+  .nq-btn.sel{background:rgba(79,142,247,0.15);border-color:rgba(79,142,247,0.4);color:var(--electric);}
+
+  /* Empty */
+  .empty-state{text-align:center;padding:72px 20px;background:var(--surface);border:1px dashed var(--border);border-radius:18px;}
+  .empty-state h3{font-family:'Syne',sans-serif;color:var(--text);font-weight:700;margin:12px 0 6px;font-size:1.2rem;}
+  .empty-state p{color:var(--muted);font-size:.85rem;}
+
+  @media(max-width:600px){.files-grid{grid-template-columns:1fr;}}
+</style>
+
+<!-- Upload Modal -->
+<div class="upload-modal" id="uploadModal">
+  <div class="upload-box">
+    <button class="btn-modal-close" onclick="closeUpload()">✕ Fermer</button>
+    <h2>📤 Ajouter un fichier</h2>
+    {# ✅ CORRIGÉ : action pointe vers my_documents (gère le POST) #}
+    <form method="post" action="{% url 'my_documents' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="up-field">
+        <label>Titre *</label>
+        <input type="text" name="title" class="up-input" placeholder="ex: Cours Thermodynamique S2" required>
+      </div>
+      <div class="up-field">
+        <label>Matière</label>
+        <select name="category" class="up-input">
+          {% for val,label in category_choices %}
+          <option value="{{ val }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="up-field">
+        <label>Description (optionnel)</label>
+        <input type="text" name="description" class="up-input" placeholder="Chapitre, thèmes couverts...">
+      </div>
+      <div class="up-field">
+        <label>Fichier * (PDF recommandé pour le Quiz IA)</label>
+        <div class="file-drop" onclick="document.getElementById('fileInput').click()">
+          <input type="file" name="file" id="fileInput" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt" required onchange="showFileName(this)">
+          <div class="file-drop-text" id="fileDropText">
+            <div style="font-size:1.8rem;margin-bottom:8px">📄</div>
+            Clique ou glisse ton fichier<br><strong>PDF, Word, PowerPoint</strong>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit-upload">Ajouter à ma bibliothèque →</button>
+    </form>
+  </div>
+</div>
+
+<!-- Quiz Options Modal -->
+<div class="quiz-modal" id="quizModal">
+  <div class="quiz-box">
+    <button class="btn-modal-close" onclick="closeQuiz()">✕</button>
+    <h2>🧠 Générer un Quiz IA</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">L'IA va analyser ton document et créer un QCM personnalisé.</p>
+    <form method="post" id="quizForm">
+      {% csrf_token %}
+      <div style="font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Nombre de questions</div>
+      <div class="nq-btns">
+        <button type="button" class="nq-btn" onclick="selectNQ(this,5)">5 — Rapide</button>
+        <button type="button" class="nq-btn sel" onclick="selectNQ(this,10)">10 — Standard</button>
+        <button type="button" class="nq-btn" onclick="selectNQ(this,15)">15 — Complet</button>
+        <button type="button" class="nq-btn" onclick="selectNQ(this,20)">20 — Examen</button>
+      </div>
+      <input type="hidden" name="num_questions" id="nqInput" value="10">
+      <button type="submit" class="btn-submit-upload" style="margin-top:4px">✨ Générer le quiz →</button>
+    </form>
+  </div>
+</div>
+
+<!-- Page principale -->
+<div class="hero">
+  <div>
+    <h1>📚 Ma Bibliothèque IA</h1>
+    <p>Tes fichiers personnels — génère des quiz avec l'IA</p>
+  </div>
+  <button class="btn-upload-trigger" onclick="openUpload()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Ajouter un fichier
+  </button>
+</div>
+
+<!-- Stats -->
+<div class="stats-bar">
+  <div class="stat-chip">
+    <div>
+      {# ✅ CORRIGÉ : variable total passée par la vue #}
+      <div class="stat-num">{{ total }}</div>
+      <div class="stat-label">Fichiers dans ta bibliothèque</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filtres -->
+<div class="filter-bar">
+  {# ✅ CORRIGÉ : my_documents existe bien dans urls.py #}
+  <a href="{% url 'my_documents' %}" class="filter-btn {% if not current_category %}active{% endif %}">Tous</a>
+  {% for val,label in category_choices %}
+  <a href="?category={{ val }}" class="filter-btn {% if current_category == val %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<!-- Fichiers -->
+{# ✅ CORRIGÉ : "documents" au lieu de "files" (nom de la variable dans views.py) #}
+{% if documents %}
+<div class="files-grid">
+  {% for doc in documents %}
+  <div class="file-card">
+    <div class="file-card-header">
+      <div class="file-ext-badge {% if doc.is_pdf %}ext-pdf{% elif doc.extension == 'DOCX' or doc.extension == 'DOC' %}ext-word{% else %}ext-other{% endif %}">
+        {{ doc.extension }}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="file-title">{{ doc.title }}</div>
+        {% if doc.description %}
+        <div class="file-desc">{{ doc.description|truncatechars:60 }}</div>
+        {% endif %}
+        <div class="file-date">{{ doc.uploaded_at|date:"d M Y" }}</div>
+      </div>
+    </div>
+
+    <!-- Actions IA -->
+    <div class="file-actions">
+      {% if doc.is_pdf %}
+      <a href="{% url 'personal_quiz' doc.id %}" class="btn-action btn-quiz">🧠 Quiz IA</a>
+      <a href="{% url 'personal_flashcards' doc.id %}" class="btn-action btn-flash">🃏 Flashcards</a>
+      <a href="{% url 'personal_resume' doc.id %}" class="btn-action btn-resume">📝 Résumé</a>
+      <a href="{% url 'personal_chat' doc.id %}" class="btn-action btn-chat">💬 Chat</a>
+      {% else %}
+      <span style="font-size:.75rem;color:var(--muted2);padding:7px 0">Fonctionnalités IA disponibles pour les PDFs uniquement</span>
+      {% endif %}
+      <a href="{{ doc.file.url }}" class="btn-action btn-dl" download>📥</a>
+      <form method="post" action="{% url 'delete_document' doc.id %}" style="display:inline" onsubmit="return confirm('Supprimer ce fichier ?')">
+        {% csrf_token %}
+        <button type="submit" class="btn-action btn-del">🗑</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div style="font-size:3rem;margin-bottom:12px">📭</div>
+  <h3>Ta bibliothèque est vide</h3>
+  <p>Ajoute tes cours, TD et résumés pour générer des quiz avec l'IA !</p>
+  <button onclick="openUpload()" style="display:inline-block;margin-top:16px;padding:10px 24px;background:linear-gradient(135deg,#4f8ef7,#60a5fa);border:none;border-radius:99px;color:#fff;font-weight:700;font-size:.9rem;cursor:pointer;">
+    + Ajouter mon premier fichier
+  </button>
+</div>
+{% endif %}
+
+<script>
+// Upload modal
+function openUpload(){document.getElementById('uploadModal').classList.add('open');document.body.style.overflow='hidden';}
+function closeUpload(){document.getElementById('uploadModal').classList.remove('open');document.body.style.overflow='';}
+document.getElementById('uploadModal').addEventListener('click',e=>{if(e.target===document.getElementById('uploadModal'))closeUpload();});
+
+// Quiz modal
+let currentFileId = null;
+function openQuiz(fileId){
+  currentFileId = fileId;
+  // ✅ CORRIGÉ : URL qui correspond à generate_quiz dans urls.py
+  document.getElementById('quizForm').action = `/document/${fileId}/generate-quiz/`;
+  document.getElementById('quizModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeQuiz(){document.getElementById('quizModal').classList.remove('open');document.body.style.overflow='';}
+document.getElementById('quizModal').addEventListener('click',e=>{if(e.target===document.getElementById('quizModal'))closeQuiz();});
+
+// Nombre de questions
+function selectNQ(btn, val){
+  document.querySelectorAll('.nq-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('nqInput').value=val;
+}
+
+// Nom du fichier sélectionné
+function showFileName(input){
+  if(input.files&&input.files[0]){
+    document.getElementById('fileDropText').innerHTML=
+      `<div style="font-size:1.5rem;margin-bottom:6px">✅</div><strong style="color:var(--electric)">${input.files[0].name}</strong><br><span style="font-size:.75rem;color:var(--muted)">${(input.files[0].size/1024/1024).toFixed(2)} Mo</span>`;
+  }
+}
+
+document.getElementById('quizForm').addEventListener('submit',function(){
+  const btn=this.querySelector('button[type=submit]');
+  btn.textContent='⏳ Génération en cours (30s)...';
+  btn.disabled=true;
+});
+</script>
+{% endblock %}

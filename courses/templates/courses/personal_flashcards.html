@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:var(--surface);border:1px solid rgba(251,191,36,0.2);border-radius:22px;padding:40px;max-width:560px;margin:60px auto;animation:fadeUp .5s both;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .card h1{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800;color:var(--text);margin-bottom:8px;}
+  .card p{color:var(--muted);font-size:.88rem;margin-bottom:28px;}
+  .doc-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:10px;padding:10px 16px;margin-bottom:24px;font-size:.85rem;color:#fbbf24;font-weight:600;}
+  .btn-gen{width:100%;padding:14px;background:linear-gradient(135deg,#f59e0b,#fbbf24);border:none;border-radius:12px;color:#1a1a2e;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .2s;}
+  .btn-gen:hover{box-shadow:0 6px 20px rgba(251,191,36,0.4);}
+  .btn-back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.82rem;text-decoration:none;margin-bottom:24px;}
+  .btn-back:hover{color:var(--text);}
+  .features{display:flex;flex-direction:column;gap:6px;margin-top:16px;}
+  .feature{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--muted);}
+  .feature::before{content:'✓';color:#fbbf24;font-weight:700;}
+</style>
+
+<div class="card">
+  <a href="{% url 'my_documents' %}" class="btn-back">← Retour à ma bibliothèque</a>
+  <div style="font-size:2.5rem;margin-bottom:12px">🃏</div>
+  <h1>Générer des Flashcards IA</h1>
+  <p>L'IA va créer 15 flashcards question/réponse à partir de ton document.</p>
+
+  <div class="doc-chip">📄 {{ document.title }}</div>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn-gen" id="genBtn">✨ Générer les flashcards →</button>
+  </form>
+
+  <div class="features">
+    <div class="feature">15 flashcards question / réponse</div>
+    <div class="feature">Mode révision interactif</div>
+    <div class="feature">Basé sur les concepts clés du document</div>
+  </div>
+</div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function() {
+  const btn = document.getElementById('genBtn');
+  btn.textContent = '⏳ Génération en cours (~20s)...';
+  btn.disabled = true;
+});
+</script>
+{% endblock %}

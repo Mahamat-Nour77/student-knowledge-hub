@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .tips-hero { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:28px; flex-wrap:wrap; animation:fadeUp .5s both; }
+  .tips-hero-text h1 { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .tips-hero-text p  { color:var(--muted); font-size:.85rem; margin:0; }
+  .btn-share { padding:10px 22px; background:linear-gradient(135deg,#3d6b4f,#5a9e72); border:none; border-radius:99px; color:#fff; font-weight:700; font-size:.88rem; text-decoration:none; transition:all .2s; box-shadow:0 2px 8px rgba(61,107,79,0.3); }
+  .btn-share:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(61,107,79,0.4); color:#fff; }
+
+  .cat-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; animation:fadeUp .5s .05s both; }
+  .cat-btn { padding:8px 16px; border-radius:99px; font-size:.83rem; font-weight:500; text-decoration:none; border:1px solid var(--border); background:var(--surface); color:var(--muted); transition:all .15s; }
+  .cat-btn:hover { border-color:rgba(79,142,247,0.4); color:var(--electric); }
+  .cat-btn.active { background:linear-gradient(135deg,#4f8ef7,#60a5fa); border-color:transparent; color:#fff; box-shadow:0 2px 8px rgba(193,68,14,0.25); }
+
+  .tips-list { display:flex; flex-direction:column; gap:14px; animation:fadeUp .5s .08s both; }
+  .tip-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:22px 24px; ; transition:all .2s; }
+  .tip-card:hover { border-color:rgba(79,142,247,0.25); box-shadow:0 8px 24px rgba(0,0,0,0.4); transform:translateY(-1px); }
+  .tip-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .tip-badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:99px; font-size:.72rem; font-weight:600; background:rgba(79,142,247,0.1); color:var(--electric); margin-bottom:4px; }
+  .tip-title { font-family:'Syne',sans-serif; font-size:1rem; font-weight:600; color:var(--text); }
+  .like-btn { display:flex; align-items:center; gap:6px; background:rgba(79,142,247,0.07); border:1.5px solid rgba(193,68,14,0.15); color:var(--electric); border-radius:99px; padding:6px 14px; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; flex-shrink:0; }
+  .like-btn:hover { background:rgba(193,68,14,0.12); border-color:rgba(79,142,247,0.4); }
+  .tip-content { font-size:.88rem; color:var(--text2); line-height:1.75; margin-bottom:12px; }
+  .tip-meta { font-size:.75rem; color:var(--muted2); display:flex; align-items:center; gap:6px; }
+  .tip-meta strong { color:var(--muted); }
+
+  .empty-state { text-align:center; padding:60px 20px; background:var(--surface); border:1.5px dashed rgba(79,142,247,0.15); border-radius:18px; }
+  .empty-state h3 { font-family:'Syne',sans-serif; color:var(--text); font-weight:600; margin:12px 0 6px; }
+  .empty-state p  { color:var(--muted); font-size:.85rem; }
+</style>
+
+<div class="tips-hero">
+  <div class="tips-hero-text">
+    <h1>💡 Conseils pour nouveaux étudiants</h1>
+    <p>Les astuces de ceux qui sont passés avant toi</p>
+  </div>
+  <a href="{% url 'tip_create' %}" class="btn-share">+ Partager un conseil</a>
+</div>
+
+<div class="cat-bar">
+  <a href="{% url 'tips_list' %}" class="cat-btn {% if not current_category %}active{% endif %}">Tous</a>
+  {% for val,label in category_choices %}
+  <a href="?category={{ val }}" class="cat-btn {% if current_category == val %}active{% endif %}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if tips %}
+  <div class="tips-list">
+    {% for tip in tips %}
+    <div class="tip-card">
+      <div class="tip-header">
+        <div>
+          <div class="tip-badge">{{ tip.get_category_display }}</div>
+          <div class="tip-title">{{ tip.title }}</div>
+        </div>
+        <button onclick="likeTip({{ tip.id }}, this)" class="like-btn">
+          ❤️ <span id="like-{{ tip.id }}">{{ tip.like_count }}</span>
+        </button>
+      </div>
+      <div class="tip-content">{{ tip.content }}</div>
+      <div class="tip-meta">
+        Par <strong>{{ tip.author.username }}</strong> · {{ tip.created_at|timesince }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <div style="font-size:2.5rem">💭</div>
+    <h3>Aucun conseil pour l'instant</h3>
+    <p>Sois le premier à partager une astuce utile pour tes camarades !</p>
+    <a href="{% url 'tip_create' %}" style="display:inline-block;margin-top:14px;padding:10px 22px;background:linear-gradient(135deg,#3d6b4f,#5a9e72);border-radius:99px;color:#fff;font-weight:700;text-decoration:none;">Partager un conseil →</a>
+  </div>
+{% endif %}
+
+<script>
+const csrf = document.cookie.split('; ').find(r => r.startsWith('csrftoken'))?.split('=')[1];
+function likeTip(id, btn) {
+  fetch(`/conseils/${id}/like/`, {
+    method:'POST', headers:{'X-CSRFToken':csrf}
+  }).then(r=>r.json()).then(data=>{
+    document.getElementById(`like-${id}`).textContent=data.count;
+    btn.style.background=data.status==='added'?'rgba(248,113,113,0.2)':'rgba(248,113,113,0.08)';
+  });
+}
+</script>
+{% endblock %}

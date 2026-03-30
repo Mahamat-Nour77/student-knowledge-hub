@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<style>
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .hero{background:linear-gradient(135deg,#1e2a4a,#1a2035);border:1px solid rgba(52,211,153,0.2);border-radius:20px;padding:28px 32px;margin-bottom:28px;animation:fadeUp .5s both;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+  .hero h1{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:#f0f2ff;margin:0;}
+  .hero p{color:rgba(240,242,255,0.5);font-size:.83rem;margin:4px 0 0;}
+  .resume-body{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:36px;animation:fadeUp .5s .1s both;line-height:1.8;color:var(--text);}
+  .resume-body h1,.resume-body h2,.resume-body h3{font-family:'Syne',sans-serif;color:var(--text);margin-top:24px;margin-bottom:8px;}
+  .resume-body h1{font-size:1.3rem;color:#34d399;}
+  .resume-body h2{font-size:1.1rem;color:var(--electric);}
+  .resume-body h3{font-size:.95rem;color:#fbbf24;}
+  .resume-body strong{color:var(--text);}
+  .resume-body ul,.resume-body ol{padding-left:20px;margin:8px 0;}
+  .resume-body li{margin-bottom:4px;font-size:.9rem;}
+  .resume-body p{font-size:.9rem;margin-bottom:12px;}
+  .btn-back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:.82rem;text-decoration:none;margin-bottom:20px;}
+  .btn-back:hover{color:var(--text);}
+  .btn-print{padding:9px 20px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);border-radius:10px;color:#34d399;font-size:.82rem;font-weight:600;cursor:pointer;text-decoration:none;}
+</style>
+
+<a href="{% url 'my_documents' %}" class="btn-back">← Retour à ma bibliothèque</a>
+
+<div class="hero">
+  <div>
+    <h1>📝 Résumé IA — {{ document.title }}</h1>
+    <p>Généré automatiquement à partir de ton document</p>
+  </div>
+  <button class="btn-print" onclick="window.print()">🖨️ Imprimer</button>
+</div>
+
+<div class="resume-body" id="resumeContent">
+  {{ resume|linebreaks }}
+</div>
+
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .note-wrap{max-width:780px;margin:0 auto;}
+  .note-hero{background:linear-gradient(135deg,#1e2a4a,#1a2035);border:1px solid rgba(79,142,247,0.2);border-radius:20px;padding:28px 32px;margin-bottom:28px;animation:fadeUp .5s both;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .note-hero h1{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:800;color:#f0f2ff;margin-bottom:3px;}
+  .note-hero p{color:rgba(240,242,255,0.55);font-size:.82rem;margin:0;}
+  .btn-back{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:99px;color:rgba(240,242,255,0.7);font-size:.83rem;font-weight:500;text-decoration:none;transition:all .15s;}
+  .btn-back:hover{background:rgba(255,255,255,0.12);color:#f0f2ff;}
+
+  /* Résumé */
+  .resume-content{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px;animation:fadeUp .5s .05s both;line-height:1.8;color:var(--text2);font-size:.9rem;white-space:pre-wrap;}
+
+  /* Flashcards */
+  .flashcards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;animation:fadeUp .5s .05s both;}
+  .flashcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:0;cursor:pointer;transition:all .2s;perspective:1000px;min-height:160px;}
+  .flashcard:hover{border-color:rgba(79,142,247,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.4);}
+  .flashcard-inner{position:relative;width:100%;height:160px;transition:transform .5s;transform-style:preserve-3d;}
+  .flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+  .flashcard-front,.flashcard-back{position:absolute;inset:0;backface-visibility:hidden;border-radius:16px;padding:20px;display:flex;flex-direction:column;justify-content:center;}
+  .flashcard-front{background:var(--surface);}
+  .flashcard-back{background:rgba(79,142,247,0.08);transform:rotateY(180deg);}
+  .fc-side-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+  .fc-side-label.q{color:var(--electric);}
+  .fc-side-label.a{color:var(--green);}
+  .fc-text{font-size:.88rem;color:var(--text);line-height:1.6;font-weight:500;}
+  .fc-hint{font-size:.7rem;color:var(--muted2);margin-top:auto;padding-top:8px;}
+</style>
+
+<div class="note-wrap">
+  <div class="note-hero">
+    <div>
+      <h1>{% if note.type == 'resume' %}📝{% else %}🃏{% endif %} {{ note.title }}</h1>
+      <p>Généré le {{ note.created_at|date:"d M Y à H:i" }}{% if note.file %} depuis « {{ note.file.title }} »{% endif %}</p>
+    </div>
+    <a href="{% url 'my_documents' %}" class="btn-back">← Ma bibliothèque</a>
+  </div>
+
+  {% if note.type == 'resume' %}
+    <div class="resume-content">{{ note.content }}</div>
+
+  {% elif note.type == 'flashcard' and flashcards %}
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:16px">Clique sur une carte pour voir la réponse 👆</p>
+    <div class="flashcards-grid">
+      {% for card in flashcards %}
+      <div class="flashcard" onclick="this.classList.toggle('flipped')">
+        <div class="flashcard-inner">
+          <div class="flashcard-front">
+            <div class="fc-side-label q">Question</div>
+            <div class="fc-text">{{ card.question }}</div>
+            <div class="fc-hint">Cliquer pour voir la réponse →</div>
+          </div>
+          <div class="flashcard-back">
+            <div class="fc-side-label a">Réponse</div>
+            <div class="fc-text">{{ card.answer }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
