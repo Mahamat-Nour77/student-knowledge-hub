@@ -1,9 +1,0 @@
-django>=5.2
-gunicorn
-whitenoise
-psycopg2-binary
-pdfplumber
-groq
-pillow
-dj-database-url
-python-dotenv
